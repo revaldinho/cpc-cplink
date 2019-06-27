@@ -1,5 +1,5 @@
-# cpc-cplink - Amstrad CPC - Coprocessor  Link Project
-Co-processor link card for Amstrad CPC Computers
+# cpc-cplink
+A co-processor link card for Amstrad CPC Computers
 
 ### Outline 
 This project is a generic coprocessor interface card for the CPC using a simple message passing protocol. Voltage level shifting components are included so that both 3V3 and 5V co-processors can be connected directly. Most likely the co-processor will be a RaspberryPi, but the simple First-In First-Out (FIFO) interface is suitable for other processors and systems too including Arduinos, Teensy and PIC MCUs.
@@ -113,6 +113,47 @@ When the FIFO has space to write new data from the host, the DIR bit in the stat
 
 ## Hardware Configuration and Options
 
+A simplified view of the circuit is shown below
+
+
+```
+       +3V3      so     dor         data      WnR  dir        si  
+        _
+ pi3v3 |o|J1      |         |         /\      |      |          |
+       |o|        V         ^         \/      V '0'  ^    1 0   V
+       |o|       _|_________|_________||______|_|____|____|_|___|_   
+        |       | A         B     :   A     DIR OEB: B    G OEB A |  
+ +5V ---+       |                 :    2x LVC245   :              |  
+        |       |_B____B_____A____:___B____________:_A__________B_|  
+       |o|J2      |    |     |        ||             |          |    
+  Pi5V |o|        |    |     |        **=======**    |          |    
+                  |    |     |        ||       ||    |          |    
+                  V 1  V     ^ 1      /\ 8     \/    ^ 1        V 1  
+               ___|____|_____|________||__    _||____|______ ___|__________
+              | sob   oeb   dor      dout |  | din  dir         si         |
+              |                           |  |                             |
+              |    FIFO0 16x4b Pair (HCT) |  | FIFO1 16x4b Pair (HCT)      |
+              |     Host->Pi              |  | Pi -> Host                  |
+              |                           |  |                             |
+              |    si dir reset     din   |  | sob dor reset    oeb   dout |
+              |___________________________|  |_____________________________|
+                   |   |   |         ||         |   |   |        |    ||
+                   ^   V   ^         /\         ^   V   ^        ^    \/
+           ______  |   |   |         ||         |   |   |        |    ||
+adr     ==|      |-+   |   |         ||         |   |   |        |    ||
+ioreq_b --| Glue |-----+   |         ||         |   |   |        |    ||
+wr_b    --| Logic|---------+---------||---------|---|---+        |    ||
+rd_b    --|      |-------------------||---------+   |            |    ||
+reset_b --|      |-------------------||-------------+            |    ||
+          |______|-------------------||--------------------------+    ||
+             ||                      ||                               ||  
+data    =====**======================**===============================**
+```
+
+Notes
+- Glue logic implemented in CPLD in prototype but replaced with 74 series logic in final version
+
+
 ### Coprocessor Physical Interface
 
 A 40W connector is provided for the coprocessor and is configured so that a Raspberry pi can be plugged in directly on the back of the board. Other devices, e.g. Arduino, will need an adapter cable.
@@ -120,7 +161,7 @@ A 40W connector is provided for the coprocessor and is configured so that a Rasp
 The pin-out of the connector and RaspberryPi GPIO connections are shown below.
 
   | Pin | Pi Pin name   | Function                         |
-  |-----|---------------|----------------------------------|
+  |-----|:--------------|:---------------------------------|
   |  1  | 3V3           | 3V3 Power into FIFO Board        |
   |  2  | 5V            | 5V Power from FIFO Board         |
   |  3  | GPIO2 (SDA1)  | unused                           |
@@ -189,11 +230,18 @@ Depending on the FIFO board supply from the CPC it may be possible to power othe
 
 ## Project Directory Structure
 
-``
+```
 ├── LICENSE      - project GPL3 license file
-├── README.md    - this descriptopm
+├── README.md    - this description
 ├── common_pcb   - common PCB control files 
 ├── pcb          - netlister.py source for PCB design
 ├── releases     - PCB layouts and CPLD code releases
 ├── src          - CPLD code
 └── xilinx       - Xilinx work area
+```
+
+Notes
+- generic PCB layout files are provided in the releases directory but using the source directly requires use of the Eagle (freeware version) PCB software and the [netlister.py - netlist to PCB script generation project](https://github.com/revaldinho/netlister).
+
+
+
