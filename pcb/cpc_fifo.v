@@ -202,16 +202,17 @@ module cpc_fifo ();
                  );
 
   // Always enabled for unidirectional control DIR=1: A->B
+  // Safe to tie off unused inputs
   LVC74245 LS_0(
-                .dir(VSS),          .vdd(VDD_IO),
+                .dir(VDD_IO),       .vdd(VDD_IO),
                 .a0(PI_GPIO_26),    .gb(VSS),
                 .a1(PI_GPIO_18),    .b0(slave_fifo_sob),
                 .a2(fifo_host_dir), .b1(slave_fifo_oeb),
                 .a3(fifo_slave_dor),.b2(PI_GPIO_20),
                 .a4(PI_GPIO_21),    .b3(PI_GPIO_17),
-                .a5(),              .b4(slave_fifo_si),
-                .a6(),              .b5(),
-                .a7(),              .b6(),
+                .a5(VSS),           .b4(slave_fifo_si),
+                .a6(VSS),           .b5(),
+                .a7(VSS),           .b6(),
                 .vss(VSS),          .b7()
                 );
 
