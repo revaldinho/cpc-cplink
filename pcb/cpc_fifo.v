@@ -307,8 +307,11 @@ module cpc_fifo ();
    cap100nf CAP100N_2 (.p0( VSS ), .p1( VDD ));
    cap100nf CAP100N_3 (.p0( VSS ), .p1( VDD ));
    cap100nf CAP100N_4 (.p0( VSS ), .p1( VDD ));
+   cap100nf CAP100N_5 (.p0( VSS ), .p1( VDD ));
+   cap100nf CAP100N_6 (.p0( VSS ), .p1( VDD ));
 
    // Decoupling for the level shifters
-   cap100nf CAP100N_5 (.p0( VSS ), .p1( VDD_IO ));  
+   cap100nf CAP100N_7 (.p0( VSS ), .p1( VDD_IO ));
+   cap100nf CAP100N_8 (.p0( VSS ), .p1( VDD_IO ));    
 
 endmodule
