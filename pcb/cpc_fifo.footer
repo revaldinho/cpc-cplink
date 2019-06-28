@@ -8,8 +8,8 @@ Wire 0  (0 0) (3.9 3.2) (0 0);
 Layer Top;
 
 # PCB-Pool/PCB-Train design rule is actually 0.006/0.006 for wires
-CLASS 0 signal 0.008 0.008 ;
-CLASS 1 supply 0.018 0.012 ;
+CLASS 0 signal 0.008 0.010 ;
+CLASS 1 supply 0.022 0.012 ;
 
 # PI-Zero fixing holes
 ADD 2,8@holes H1 R0 (3.39 2.90); # hdr1x03
@@ -18,26 +18,26 @@ ADD 2,8@holes H2 R0 (1.11 2.90); # hdr1x03
 # Caps
 ROTATE =R90 CAP22UF_5V ; 
 MOVE CAP22UF_5V    (3.55 0.35 ) ;
-ROTATE =R90 CAP22UF_IO ; 
-MOVE CAP22UF_IO    (0.55 2.9 ) ;
+ROTATE =R0 CAP22UF_IO ; 
+MOVE CAP22UF_IO    (0.65 2.85 ) ;
 
 ROTATE =R270 CAP100N_1 ; 
-MOV CAP100N_1      (1.45 1.25) ;
+MOV CAP100N_1      (1.55 1.25) ;
 ROTATE =R270 CAP100N_2 ; 
-MOV CAP100N_2      (3.75 0.95) ;
+MOV CAP100N_2      (3.75 1.00) ;
 ROTATE =R270 CAP100N_3 ; 
-MOV CAP100N_3      (3.75 1.7) ;
+MOV CAP100N_3      (3.75 1.75) ;
 ROTATE =R0 CAP100N_4 ; 
 MOV CAP100N_4      (1.05 2.05) ;
 ROTATE =R270 CAP100N_5 ; 
-MOV CAP100N_5      (1.80 1.05) ;
+MOV CAP100N_5      (2.70 1.00) ;
 ROTATE =R270 CAP100N_6 ; 
-MOV CAP100N_6      (1.80 1.8) ;
+MOV CAP100N_6      (2.70 1.75) ;
 # 3V3 decoupling cap
 ROTATE =R270 CAP100N_7 ; 
-MOV CAP100N_7      (3.75 2.35) ;
+MOV CAP100N_7      (3.75 2.40) ;
 ROTATE =R270 CAP100N_8 ; 
-MOV CAP100N_8      (1.35 2.35) ;
+MOV CAP100N_8      (2.50 2.40) ;
 
 # connectors
 ROTATE =R180 CONN1 ;
@@ -47,23 +47,23 @@ MOVE CONN2         (2.25 2.90) ;
 ROTATE =R0 UART ;
 MOVE UART          (0.9 2.6);
 ROTATE =R90 JTAG ;
-MOVE JTAG          (0.2 1.75) ;
+MOVE JTAG          (0.3 1.75) ;
 ROTATE =R0 L2 ;
-MOVE L2            (0.35 2.6) ;  
+MOVE L2            (0.45 2.6) ;  
 ROTATE =R270 L3 ;
-MOVE L3            (0.25 2.9) ;  
+MOVE L3            (0.35 2.9) ;  
 
 ROTATE =R0 CPLD ;
 MOVE CPLD          (0.95 1.5) ;
 
 ROTATE =R180 LS_1;
-MOVE LS_1           (2.0 2.4) ;
+MOVE LS_1           (1.9 2.4) ;
 ROTATE =R180 LS_0;
 MOVE LS_0           (3.15 2.4) ;
 ROTATE =R180 FIFO0_1;
-MOVE FIFO0_0        (2.35 1.0) ;
+MOVE FIFO0_0        (2.20 1.0) ;
 ROTATE =R180 FIFO1_1;
-MOVE FIFO0_1        (2.35 1.75) ;
+MOVE FIFO0_1        (2.20 1.75) ;
 ROTATE =R180 FIFO0_0;
 MOVE FIFO1_0        (3.25 1.0) ;
 ROTATE =R180 FIFO1_0;
@@ -72,17 +72,22 @@ MOVE FIFO1_1        (3.25 1.75) ;
 Layer tPlace ;
 CHANGE FONT PROPORTIONAL ; 
 CHANGE SIZE 0.06
-TEXT 'CPC-CPLINK CPC Coprocessor Link v1.00' R0 (2.2 3.1) ;
+TEXT 'CPC-CPLINK CPC Coprocessor Link v1.00' R0 (1.6 3.1) ;
 CHANGE SIZE 0.04
-TEXT '(C) 2019 Revaldinho'  R90      (0.2 0.25) ;
-TEXT 'github.com/revaldinho/cpc-cplink'  R90      (0.3 0.25) ;
+TEXT '(C) 2019 Revaldinho'  R90      (0.2 0.1) ;
+TEXT 'github.com/revaldinho/cpc-cplink'  R90      (0.3 0.1) ;
 
-#  CHANGE FONT FIXED ; 
-#  CHANGE SIZE 0.03 ;
-#  CHANGE WIDTH 0.01 ;
-#  WIRE  (1.95 2.45) (1.95 2.6 ) (2.55 2.6 ) (2.55 2.45) ( 1.95 2.45 ) ;
-#  TEXT 'GND  TDI  TCK  NC' R0 (2.0 2.54) ;
-#  TEXT 'GND  TMS  TDO  5V' R0 (2.0 2.50) ;
+CHANGE FONT FIXED ; 
+CHANGE SIZE 0.03 ;
+CHANGE WIDTH 0.01 ;
+WIRE  (0.20 1.05) (0.20 1.53) (0.4 1.53 ) (0.4 1.05) ( 0.20 1.05 ) ;
+TEXT 'GND  TDI  TCK  NC' R90 (0.25 1.09) ;
+TEXT 'GND  TMS  TDO  5V' R90 (0.35 1.09) ;
+TEXT '+5V VDDIO +3V3' R0  (0.28 2.5) ;
+TEXT 'GND TxD RxD' R0  (0.76 2.5) ;
+TEXT 'WARNING: DO NOT CLOSE L3 WHEN USING 'R0 (0.05 3.10) ;
+TEXT '         EXTERNAL COPROCESSOR POWER' R0 (0.05 3.05) ;
+
 
 
 # Preroute VDD and VSS rings
@@ -95,6 +100,7 @@ wire  'VSS' (0.06 0.06) ( 3.84 0.06) (3.84 3.14) (0.06 3.14) (0.06 0.06) ;
 
 # Dont Route clock and supplies first - better results otherwise (fewer vias)
 # AUTO VDD VDD_IO VDD_3V3 VSS CLK
+AUTO CLK
 # Autorouter
 AUTO load /tmp/autorouter.ctl;
 AUTO ;
