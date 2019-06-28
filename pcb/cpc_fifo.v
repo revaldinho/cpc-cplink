@@ -83,7 +83,8 @@ module cpc_fifo ();
   wire PI_GPIO_27;
   wire SDA;  
   wire SCL;
-       
+  wire sd7,sd6,sd5,sd4,sd3,sd2,sd1,sd0; 
+  
        
   wire TMS;
   wire TDI;
@@ -134,31 +135,31 @@ module cpc_fifo ();
     
   // 9572XL CPLD - 3.3V core, 5V IO
   xc9572pc44  CPLD (
-                    .p1(A2),
-	            .p2(A3),
-	            .p3(A4),
-	            .p4(A5),
+                    .p1(host_fifo_si),
+	            .p2(host_fifo_sob),
+	            .p3(host_fifo_oeb),
+	            .p4(host_fifo_reset),
 	            .gck1(CLK),
-	            .gck2(A6),
-	            .gck3(A7),
-	            .p8(A8),
-	            .p9(A9),
+	            .gck2(A0),
+	            .gck3(A1),
+	            .p8(A4),
+	            .p9(A5),
 	            .gnd1(VSS),
-	            .p11(A10),
-	            .p12(A11),
-	            .p13(A12),
-	            .p14(A13),
+	            .p11(A6),
+	            .p12(A7),
+	            .p13(A8),
+	            .p14(A9),
 	            .tdi(TDI),
 	            .tms(TMS),
 	            .tck(TCK),
-	            .p18(A14),
-	            .p19(A15),
-	            .p20(host_fifo_si),
+	            .p18(A10),
+	            .p19(A11),
+	            .p20(A12),
 	            .vccint1(VDD),
-	            .p22(host_fifo_sob),
+	            .p22(A13),
 	            .gnd2(VSS),
-	            .p24(host_fifo_oeb),
-	            .p25(host_fifo_reset),
+	            .p24(A14),
+	            .p25(A15),
 	            .p26(D7),
 	            .p27(D6),
 	            .p28(D5),
@@ -170,13 +171,13 @@ module cpc_fifo ();
 	            .p34(D2),
 	            .p35(D1),
 	            .p36(D0),
-	            .p37(A0),
+	            .p37(fifo_host_dor),
 	            .p38(fifo_host_dir),
-	            .gsr(fifo_host_dor),
+	            .gsr(RESET_B),
 	            .gts2(IOREQ_B),
 	            .vccint2(VDD),
 	            .gts1(WR_B),
-	            .p43(A1),            
+	            .p43(WAIT_B),            
 	            .p44(RD_B),
                     );
 

@@ -71,7 +71,7 @@ The FIFOs appear to the CPC as IO mapped locations at &FD81 and & FD80.
 - IO Address &FD80 is the FIFO data register
 - IO Address &FD81 is the FIFO status register
 
-NB. To simplify address decoding and reduce the chip count on the 74 Series implementation of the FIFO board, the board actually requires 16 locations in IO space from &FD80 to &FD8F. In this way, the FIFO registers appear mapped to every pair of even/odd addresses in this space.
+NB. To simplify address decoding and reduce the chip count on the 74 Series implementation of the FIFO board, the board actually requires 32 locations in IO space from &FD80 to &FD9F. In this way, the FIFO registers appear mapped to every pair of even/odd addresses in this space.
 
 Bits in the status register are assigned as follows
 
