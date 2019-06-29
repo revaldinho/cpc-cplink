@@ -79,7 +79,7 @@ TEXT '(C) 2019 Revaldinho, github.com/revaldinho/cpc-cplink'  R90      (0.1 0.1)
 CHANGE FONT FIXED ; 
 CHANGE SIZE 0.03 ;
 CHANGE WIDTH 0.01 ;
-WIRE  (0.20 0.95) (0.20 1.53) (0.4 1.53 ) (0.4 0.95) ( 0.20 0.95 ) ;
+WIRE  (0.20 0.95) (0.20 1.5) (0.4 1.5 ) (0.4 0.95) ( 0.20 0.95 ) ;
 TEXT 'GND  TDI  TCK  NC' R90 (0.25 0.99) ;
 TEXT 'GND  TMS  TDO  5V' R90 (0.35 0.99) ;
 TEXT '+5V VDDIO +3V3' R0  (0.28 2.5) ;
