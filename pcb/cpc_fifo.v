@@ -53,7 +53,7 @@ module cpc_fifo ();
   wire fifo_slave_dor;
   wire slave_fifo_si;
   wire slave_fifo_sob;
-  wire slave_fifo_oeb;
+  wire slave_fifo_wnr;
 
   wire PI_GPIO_02;
   wire PI_GPIO_03;
@@ -207,7 +207,7 @@ module cpc_fifo ();
                 .dir(VDD_IO),       .vdd(VDD_IO),
                 .a0(PI_GPIO_26),    .gb(VSS),
                 .a1(PI_GPIO_18),    .b0(slave_fifo_sob),
-                .a2(fifo_host_dir), .b1(slave_fifo_oeb),
+                .a2(fifo_slave_dir),.b1(slave_fifo_wnr),
                 .a3(fifo_slave_dor),.b2(PI_GPIO_20),
                 .a4(PI_GPIO_21),    .b3(PI_GPIO_17),
                 .a5(VSS),           .b4(slave_fifo_si),
@@ -230,8 +230,8 @@ module cpc_fifo ();
                 );
   
   SN74HCT40105 FIFO0_0(
-                      .oeb(slave_fifo_oeb),   .vdd(VDD),
-                      .dir(fifo_slave_dir),   .sob(slave_fifo_sob),
+                      .oeb(slave_fifo_wnr),   .vdd(VDD),
+                      .dir(fifo_host_dir),    .sob(slave_fifo_sob),
                       .si(host_fifo_si),      .dor(fifo_slave_dor),
                       .d0(D0),                .q0(sd0),
                       .d1(D1),                .q1(sd1),
@@ -241,8 +241,8 @@ module cpc_fifo ();
                       );
 
   SN74HCT40105 FIFO0_1(
-                      .oeb(slave_fifo_oeb),   .vdd(VDD),
-                      .dir(),   .sob(slave_fifo_sob),
+                      .oeb(slave_fifo_wnr),   .vdd(VDD),
+                      .dir(),                 .sob(slave_fifo_sob),
                       .si(host_fifo_si),      .dor(),
                       .d0(D4),                .q0(sd4),
                       .d1(D5),                .q1(sd5),
