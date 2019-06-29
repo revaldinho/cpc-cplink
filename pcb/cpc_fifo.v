@@ -177,7 +177,7 @@ module cpc_fifo ();
 	            .gts2(IOREQ_B),
 	            .vccint2(VDD),
 	            .gts1(WR_B),
-	            .p43(WAIT_B),            
+	            .p43(READY),            
 	            .p44(RD_B),
                     );
 
