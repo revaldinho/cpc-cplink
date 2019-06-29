@@ -182,14 +182,14 @@ module cpc_fifo ();
                     );
 
   // Select 5V or 3V3 for CPLD IO voltage 
-  hdr1x03      L2 (
+  hdr1x03      J1 (
                    .p1(VDD),
                    .p2(VDD_IO),
                    .p3(VDD_3V3)
                    );
 
   // 5V Power jumper for 40W socket
-  hdr1x02      L3 (
+  hdr1x02      J2 (
                    .p1(VDD_PI),
                    .p2(VDD)
                    );
