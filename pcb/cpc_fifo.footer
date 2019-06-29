@@ -74,15 +74,14 @@ CHANGE FONT PROPORTIONAL ;
 CHANGE SIZE 0.06
 TEXT 'CPC-CPLINK CPC Coprocessor Link v0.1' R0 (1.6 3.1) ;
 CHANGE SIZE 0.04
-TEXT '(C) 2019 Revaldinho'  R90      (0.2 0.1) ;
-TEXT 'github.com/revaldinho/cpc-cplink'  R90      (0.3 0.1) ;
+TEXT '(C) 2019 Revaldinho, github.com/revaldinho/cpc-cplink'  R90      (0.1 0.1) ;
 
 CHANGE FONT FIXED ; 
 CHANGE SIZE 0.03 ;
 CHANGE WIDTH 0.01 ;
-WIRE  (0.20 1.05) (0.20 1.53) (0.4 1.53 ) (0.4 1.05) ( 0.20 1.05 ) ;
-TEXT 'GND  TDI  TCK  NC' R90 (0.25 1.09) ;
-TEXT 'GND  TMS  TDO  5V' R90 (0.35 1.09) ;
+WIRE  (0.20 0.95) (0.20 1.53) (0.4 1.53 ) (0.4 0.95) ( 0.20 0.95 ) ;
+TEXT 'GND  TDI  TCK  NC' R90 (0.25 0.99) ;
+TEXT 'GND  TMS  TDO  5V' R90 (0.35 0.99) ;
 TEXT '+5V VDDIO +3V3' R0  (0.28 2.5) ;
 TEXT 'GND TxD RxD' R0  (0.76 2.5) ;
 TEXT 'WARNING: DO NOT CLOSE J2 WHEN USING 'R0 (0.05 3.10) ;
