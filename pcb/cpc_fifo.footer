@@ -8,8 +8,11 @@ Wire 0  (0 0) (3.9 3.2) (0 0);
 Layer Top;
 
 # PCB-Pool/PCB-Train design rule is actually 0.006/0.006 for wires
-CLASS 0 signal 0.008 0.010 ;
-CLASS 1 supply 0.022 0.012 ;
+CLASS 0 signal 0.010 0.010 ;
+CLASS 1 supply 0.030 0.015 ;
+## Tight supply connections will be finished with smaller geometry after first routing
+## CLASS 1 supply 0.022 0.012 ;
+
 
 # PI-Zero fixing holes
 ADD 2,8@holes H1 R0 (3.39 2.90); # hdr1x03
@@ -97,12 +100,16 @@ layer bottom;
 wire  0.04;
 wire  'VSS' (0.06 0.06) ( 3.84 0.06) (3.84 3.14) (0.06 3.14) (0.06 0.06) ;
 
-# Dont Route clock and supplies first - better results otherwise (fewer vias)
-# AUTO VDD VDD_IO VDD_3V3 VSS CLK
-AUTO CLK
 # Autorouter
 AUTO load /tmp/autorouter.ctl;
+# Route clock and supplies first using wide power
+# AUTO VDD VDD_IO VDD_3V3 VSS CLK
+AUTO CLK
+AUTO
+# Reduce power width for CPLD final connections when routing rest of nets
+CLASS 1 supply 0.022 0.012 ;
 AUTO ;
+
 
 # Define power fills top and bottom over whole board area
 layer Top ; 
