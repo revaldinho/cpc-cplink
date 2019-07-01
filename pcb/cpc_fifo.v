@@ -55,32 +55,34 @@ module cpc_fifo ();
   wire slave_fifo_sob;
   wire slave_fifo_wnr;
 
-  wire PI_GPIO_02;
-  wire PI_GPIO_03;
-  wire PI_GPIO_04;
-  wire PI_GPIO_05;
-  wire PI_GPIO_06;
-  wire PI_GPIO_07;
-  wire PI_GPIO_08;  // FIFO DATA[0]
-  wire PI_GPIO_09;  // FIFO DATA[1]
-  wire PI_GPIO_10;  // FIFO DATA[2]
-  wire PI_GPIO_11;  // FIFO DATA[3]
-  wire PI_GPIO_12;  
-  wire PI_GPIO_13;
-  wire PI_GPIO_14;
-  wire PI_GPIO_15;
-  wire PI_GPIO_16;
-  wire PI_GPIO_17;  // FIFO DATA OUTPUT READY (DOR)
-  wire PI_GPIO_18;  // FIFO WRITE NOT READ (WNR)
-  wire PI_GPIO_19;  
-  wire PI_GPIO_20;  // FIFO DATA INPUT READY (DIR)
-  wire PI_GPIO_21;  // FIFO SHIFT IN (SI)
-  wire PI_GPIO_22;  // FIFO DATA[4]
-  wire PI_GPIO_23;  // FIFO DATA[5]
-  wire PI_GPIO_24;  // FIFO DATA[6]
-  wire PI_GPIO_25;  // FIFO DATA[7]
-  wire PI_GPIO_26;  // NOT FIFO SHIFT OUT (SOB)
-  wire PI_GPIO_27;
+
+  wire PI_GPIO_02; // FIFO DATA[0]
+  wire PI_GPIO_03; // FIFO DATA[1] 
+  wire PI_GPIO_04; // FIFO DATA[2]
+  wire PI_GPIO_05; //-- 40W only
+  wire PI_GPIO_06; //-- 40W only
+  wire PI_GPIO_07; // FIFO DATA[3]
+  wire PI_GPIO_08; // FIFO DATA[4]
+  wire PI_GPIO_09; // FIFO DATA[5]
+  wire PI_GPIO_10; // FIFO DATA[6]
+  wire PI_GPIO_11; // FIFO DATA[7]
+  wire PI_GPIO_12; //-- 40W only
+  wire PI_GPIO_13; //-- 40W only
+  wire PI_GPIO_14; // UART TxD
+  wire PI_GPIO_15; // UART RxD
+  wire PI_GPIO_16; //-- 40W only
+  wire PI_GPIO_17; // FIFO DATA INPUT READY (DIR)
+  wire PI_GPIO_18; // FIFO SHIFT IN (SI)
+  wire PI_GPIO_19; //-- 40W only
+  wire PI_GPIO_20; //-- 40W only
+  wire PI_GPIO_21; //-- 40W only
+  wire PI_GPIO_22; // NOT FIFO SHIFT OUT (SOB)
+  wire PI_GPIO_23; // FIFO DATA OUTPUT READY (DOR)
+  wire PI_GPIO_24; // FIFO WRITE NOT READ (WNR)
+  wire PI_GPIO_25; // unused
+  wire PI_GPIO_26; //-- 40W only
+  wire PI_GPIO_27; // unused
+
   wire SDA;  
   wire SCL;
   wire sd7,sd6,sd5,sd4,sd3,sd2,sd1,sd0; 
@@ -205,38 +207,38 @@ module cpc_fifo ();
   // Safe to tie off unused inputs
   LVC74245 LS_0(
                 .dir(VDD_IO),       .vdd(VDD_IO),
-                .a0(PI_GPIO_26),    .gb(VSS),
-                .a1(PI_GPIO_18),    .b0(slave_fifo_sob),
-                .a2(fifo_slave_dir),.b1(slave_fifo_wnr),
-                .a3(fifo_slave_dor),.b2(PI_GPIO_20),
-                .a4(PI_GPIO_21),    .b3(PI_GPIO_17),
-                .a5(VSS),           .b4(slave_fifo_si),
-                .a6(VSS),           .b5(),
-                .a7(VSS),           .b6(),
-                .vss(VSS),          .b7()
+                .a0(VSS),            .gb(VSS),
+                .a1(VSS),           .b0(),
+                .a2(VSS),           .b1(),
+                .a3(PI_GPIO_24),    .b2(),
+                .a4(fifo_slave_dor),.b3(slave_fifo_wnr),
+                .a5(PI_GPIO_22),    .b4(PI_GPIO_23),
+                .a6(PI_GPIO_18),    .b5(slave_fifo_sob),
+                .a7(fifo_slave_dir),.b6(slave_fifo_si),
+                .vss(VSS),          .b7(PI_GPIO_17)
                 );
 
   LVC74245 LS_1(
-                .dir(PI_GPIO_18),   .vdd(VDD_IO),
-                .a0(PI_GPIO_08),    .gb(VSS),
-                .a1(PI_GPIO_09),    .b0(sd0),
-                .a2(PI_GPIO_10),    .b1(sd1),
-                .a3(PI_GPIO_11),    .b2(sd2),
-                .a4(PI_GPIO_22),    .b3(sd3),
-                .a5(PI_GPIO_23),    .b4(sd4),
-                .a6(PI_GPIO_24),    .b5(sd5),
-                .a7(PI_GPIO_25),    .b6(sd6),
-                .vss(VSS),          .b7(sd7)
+                .dir(PI_GPIO_24),   .vdd(VDD_IO),
+                .a0(PI_GPIO_11),    .gb(VSS),
+                .a1(PI_GPIO_10),    .b0(sd7),
+                .a2(PI_GPIO_09),    .b1(sd6),
+                .a3(PI_GPIO_08),    .b2(sd5),
+                .a4(PI_GPIO_07),    .b3(sd4),
+                .a5(PI_GPIO_04),    .b4(sd3),
+                .a6(PI_GPIO_03),    .b5(sd2),
+                .a7(PI_GPIO_02),    .b6(sd1),
+                .vss(VSS),          .b7(sd0)
                 );
   
   SN74HCT40105 FIFO0_0(
                       .oeb(slave_fifo_wnr),   .vdd(VDD),
                       .dir(fifo_host_dir),    .sob(slave_fifo_sob),
                       .si(host_fifo_si),      .dor(fifo_slave_dor),
-                      .d0(D0),                .q0(sd0),
-                      .d1(D1),                .q1(sd1),
-                      .d2(D2),                .q2(sd2),
-                      .d3(D3),                .q3(sd3),
+                      .d0(D3),                .q0(sd3),
+                      .d1(D2),                .q1(sd2),
+                      .d2(D1),                .q2(sd1),
+                      .d3(D0),                .q3(sd0),
                       .vss(VSS),              .mr(host_fifo_reset)
                       );
 
@@ -244,10 +246,10 @@ module cpc_fifo ();
                       .oeb(slave_fifo_wnr),   .vdd(VDD),
                       .dir(),                 .sob(slave_fifo_sob),
                       .si(host_fifo_si),      .dor(),
-                      .d0(D4),                .q0(sd4),
-                      .d1(D5),                .q1(sd5),
-                      .d2(D6),                .q2(sd6),
-                      .d3(D7),                .q3(sd7),
+                      .d0(D7),                .q0(sd7),
+                      .d1(D6),                .q1(sd6),
+                      .d2(D5),                .q2(sd5),
+                      .d3(D4),                .q3(sd4),
                       .vss(VSS),              .mr(host_fifo_reset)
                       );
 
@@ -255,10 +257,10 @@ module cpc_fifo ();
                       .oeb(host_fifo_oeb),    .vdd(VDD),
                       .dir(fifo_slave_dir),   .sob(host_fifo_sob),
                       .si(slave_fifo_si),     .dor(fifo_host_dor),
-                      .d0(sd0),               .q0(D0),
-                      .d1(sd1),               .q1(D1),
-                      .d2(sd2),               .q2(D2),
-                      .d3(sd3),               .q3(D3),
+                      .d0(sd3),               .q0(D3),
+                      .d1(sd2),               .q1(D2),
+                      .d2(sd1),               .q2(D1),
+                      .d3(sd0),               .q3(D0),
                       .vss(VSS),              .mr(host_fifo_reset)
                       );
 
@@ -266,10 +268,10 @@ module cpc_fifo ();
                       .oeb(host_fifo_oeb),    .vdd(VDD),
                       .dir(),                 .sob(host_fifo_sob),
                       .si(slave_fifo_si),     .dor(),
-                      .d0(sd4),               .q0(D4),
-                      .d1(sd5),               .q1(D5),
-                      .d2(sd6),               .q2(D6),
-                      .d3(sd7),               .q3(D7),
+                      .d0(sd7),               .q0(D7),
+                      .d1(sd6),               .q1(D6),
+                      .d2(sd5),               .q2(D5),
+                      .d3(sd4),               .q3(D4),
                       .vss(VSS),              .mr(host_fifo_reset)
                       );
   
