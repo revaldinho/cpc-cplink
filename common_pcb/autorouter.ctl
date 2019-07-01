@@ -2,7 +2,7 @@
 
 [Default]
 
-  RoutingGrid     = 10mil
+  RoutingGrid     = 5mil
 
   ; Trace Parameters:
 

@@ -164,30 +164,30 @@ The pin-out of the connector and RaspberryPi GPIO connections are shown below.
   |-----|:--------------|:---------------------------------|
   |  1  | 3V3           | 3V3 Power into FIFO Board        |
   |  2  | 5V            | 5V Power from FIFO Board         |
-  |  3  | GPIO2 (SDA1)  | unused                           |
+  |  3  | GPIO2 (SDA1)  | FIFO DATA [0]                    |
   |  4  | 5V            | 5V Power from FIFO Board         |
-  |  5  | GPIO3 (SCL1)  | unused                           |
+  |  5  | GPIO3 (SCL1)  | FIFO DATA [1]                    |
   |  6  | GROUND        | GROUND                           |
-  |  7  | GPIO4         | unused                           |
+  |  7  | GPIO4         | FIFO DATA [2]                    |
   |  8  | GPIO14 (TxD)  | UART TxD                         |
   |  9  | GROUND        | GROUND                           |
   |  10 | GPIO15 (RxD)  | UART RxD                         |
-  |  11 | GPIO17        | FIFO DATA OUTPUT READY (DOR)     |
-  |  12 | GPIO18        | FIFO WRITE NOT READ (WNR)        |
+  |  11 | GPIO17        | FIFO DATA INPUT READY (DIR)      |
+  |  12 | GPIO18        | FIFO SHIFT IN (SI)               |
   |  13 | GPIO27        | unused                           |
   |  14 | GROUND        | GROUND                           |
-  |  15 | GPIO22        | FIFO DATA[4]                     |
-  |  16 | GPIO23        | FIFO DATA[5]                     |
+  |  15 | GPIO22        | NOT FIFO SHIFT OUT (SOB)         |
+  |  16 | GPIO23        | FIFO DATA OUTPUT READY (DOR)     |
   |  17 | 3V3           | 3V3 Power into FIFO board        |
-  |  18 | GPIO24        | FIFO DATA[6]                     |
-  |  19 | GPIO10 (MOSI) | FIFO DATA[2]                     |
+  |  18 | GPIO24        | FIFO WRITE NOT READ              |
+  |  19 | GPIO10 (MOSI) | FIFO DATA[6]                     |
   |  20 | GROUND        | GROUND                           |
-  |  21 | GPIO09 (MISO) | FIFO DATA[1]                     |
-  |  22 | GPIO25        | FIFO DATA[7]                     |
-  |  23 | GPIO11 (SCLK) | FIFO DATA[3]                     |
-  |  24 | GPIO08 (CE0)  | FIFO DATA[0]                     |
+  |  21 | GPIO09 (MISO) | FIFO DATA[5]                     |
+  |  22 | GPIO25        | unused                           |
+  |  23 | GPIO11 (SCLK) | FIFO DATA[7]                     |
+  |  24 | GPIO08 (CE0)  | FIFO DATA[4]                     |
   |  25 | GROUND        | GROUND                           |
-  |  26 | GPIO07 (CE1)  | unused                           |
+  |  26 | GPIO07 (CE1)  | FIFO DATA [3]                    |
   |  27 | SDA0 (EEPROM) | unused                           |
   |  28 | SCL0 (EEPROM) | unused                           |
   |  29 | GPIO05        | unused                           |
@@ -198,10 +198,12 @@ The pin-out of the connector and RaspberryPi GPIO connections are shown below.
   |  34 | GROUND        | GROUND                           |
   |  35 | GPIO19        | unused                           |
   |  36 | GPIO16        | unused                           |
-  |  37 | GPIO26        | NOT FIFO SHIFT OUT (SOB)         |
-  |  38 | GPIO20        | FIFO DATA INPUT READY (DIR)      |
+  |  37 | GPIO26        | unused                           |
+  |  38 | GPIO20        | unused                           |
   |  39 | GROUND        | GROUND                           |
-  |  40 | GPIO21        | FIFO SHIFT IN (SI)               |
+  |  40 | GPIO21        | unused                           |
+
+Note that only the pins of the original RaspberryPi's 26W connector are used, so that the card is directly plug compatible with all Pis and with the IO board fitted in the [Fuze T2 keyboard](https://www.amazon.co.uk/FUZE-powered-Raspberry-RPi-FUZE-T2/dp/B00LMG57NQ) for both RPi1 and RPi2 revisions. However some GPIOs were renumbered after the very first Rev1 version of the RPi 1. The pin-out here applies to all current RaspberryPi models. For GPIO changes to use a Rev1 pi refer to [SwiftyGPIO](https://github.com/uraimo/SwiftyGPIO/wiki/GPIO-Pinout).
 
 ### UART Interface
 
