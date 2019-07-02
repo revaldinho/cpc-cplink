@@ -160,6 +160,10 @@ A 40W connector is provided for the coprocessor and is configured so that a Rasp
 
 The pin-out of the connector and RaspberryPi GPIO connections are shown below.
 
+
+![Placement Image](https://raw.githubusercontent.com/revaldinho/cpc-cplink/master/doc/cplink_v0.2_40W.png)
+
+
   | Pin | Pi Pin name   | Function                         |
   |-----|:--------------|:---------------------------------|
   |  1  | 3V3           | 3V3 Power into FIFO Board        |
@@ -244,6 +248,12 @@ Depending on the FIFO board supply from the CPC it may be possible to power othe
 
 Notes
 - generic PCB layout files are provided in the releases directory but using the source directly requires use of the Eagle (freeware version) PCB software and the [netlister.py - netlist to PCB script generation project](https://github.com/revaldinho/netlister).
+
+## Construction Details
+
+More notes on board construction are provided on the following pages:
+
+- [v0.2 Prototype Construction](https://github.com/revaldinho/cpc-cplink/blob/master/doc/cplink_v0.2_construction.md)
 
 
 
