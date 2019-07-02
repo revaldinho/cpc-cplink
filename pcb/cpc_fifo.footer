@@ -9,8 +9,8 @@ Layer Top;
 
 
 # PI-Zero fixing holes
-ADD 2,8@holes H1 R0 (3.69 2.90); # hdr1x03
-ADD 2,8@holes H2 R0 (1.41 2.90); # hdr1x03
+ADD 2,8@holes H1 R0 (3.64 2.90); # hdr1x03
+ADD 2,8@holes H2 R0 (1.36 2.90); # hdr1x03
 
 # Caps
 ROTATE =R90 CAP22UF_5V ; 
@@ -40,7 +40,7 @@ MOV CAP100N_8      (2.50 2.40) ;
 ROTATE =R180 CONN1 ;
 MOVE CONN1         (1.95 0.25) ;
 ROTATE =R0 CONN2 ;
-MOVE CONN2         (2.55 2.90) ;
+MOVE CONN2         (2.50 2.90) ;
 ROTATE =R0 UART ;
 MOVE UART          (0.9 2.6);
 ROTATE =R90 JTAG ;
