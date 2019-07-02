@@ -1,10 +1,12 @@
 # CPC-CPLINK v0.2 Construction
 
+
 ## Circuit Board Component Placement
 
 A component placement diagram for the board is shown below.
 
-![Placement Image](https://raw.githubusercontent.com/revaldinho/cpc-cplink/master/doc/v0.2_proto/cplink_v0.2_placement.png)
+![Placement Image](https://raw.githubusercontent.com/revaldinho/cpc-cplink/master/doc/cplink_v0.2_placement.png)
+
 
 Sockets are recommended for all ICs. 
 
@@ -32,11 +34,17 @@ Take care to orient all ICs and sockets exactly as shown in the layout above.
 | CAP100N_* | 100nF Cap | Ceramic disc decoupling caps | 
 | CAP22UF_* | 22uF Cap | Electrolytic capacitors | 
 
-## Mounting A Raspberry Pi-Zero
+## Coprocessor Connector
 
-The pin out of CONN2 matches the 40W Raspberry Pi connector exactly. If the CONN2 connector is plugged into the *back*of the PCB, then a Pi-Zero will plug straight into that and can be secured with screws through the two mounting holes. If your RaspberryPi has a 40 pin header then you will need to fit a 40W box socket on the back; conversely if your RaspberryPi has the box socket fitted, then use a pin header instead on the CPLINK board.
+The 40W connector pin assignments are shown in the table below.
 
-## Other Coprocessors
+![Placement Image](https://raw.githubusercontent.com/revaldinho/cpc-cplink/master/doc/cplink_v0.2_40W.png)
+
+Only the left most 26 pins are used in the co-processor connector to make it plug compatible with older RaspberryPis.  Mounting hols are provided for securing a RaspberryPi zero directly on the back of the board (in which case CONN2 should be mounted on the back and either a box socket or pin header chose to mate with the Zero). All other RaspberryPis  can be directly plugged into the connector too, although for the larger ones it may be more convenient to use a ribbon cable  depending on which of the Pi's other interfaces need to be used.  
+
+
+
+
 
 
 
