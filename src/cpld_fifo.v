@@ -112,6 +112,7 @@ module cpld_fifo(
   assign       o_fifo_reset =  ! (wr_b | ioreq_b | fifo_status_adr_b);  
 
   // FIFO IC drives databus directly using OEB to control tristate so control status bits only
-  assign    data = (!fifo_status_oeb) ?  {6'bx, fifo_host_dir, fifo_host_dor}: 8'bz;
+   assign    data = (fifo_status_oeb) ? 8'bz : {6'b0, fifo_host_dir, fifo_host_dor};
+   
             
 endmodule
