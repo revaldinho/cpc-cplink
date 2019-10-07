@@ -106,9 +106,9 @@ When the FIFO has space to write new data from the host, the DIR bit in the stat
      150 END
      
     999 'CPC host code define functions and initialise FIFO
-    1000 DEF FNbin_rdy  = IN( &FD81 ) AND &02 
-    1010 DEF FNbout_rdy = IN( &FD81 ) AND &01 
-    1030 OUT &FD01,00 : 'reset FIFO
+    1000 DEF FNbin_rdy  = INP( &FD81 ) AND &02 
+    1010 DEF FNbout_rdy = INP( &FD81 ) AND &01 
+    1030 OUT &FD81,00 : 'reset FIFO
     1070 return
 
 ## Hardware Configuration and Options
