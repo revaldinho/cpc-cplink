@@ -18,7 +18,9 @@ All code and documentation for this project is made available under the GPL3 ope
 
 ### Status
 
-Currently a protoype is in development in which the logic is being implemented using a small (but sadly now obsolete) Xilinx XC9536-PC44 CPLD. However, the end goal of the project is to create a card using only standard, through hole mounted, 74 Series ICs and into which a RaspberryPi can be directly inserted. There will eventually be no FPGAs, CPLDs or GALs to program at all so the final version of the project can be built easily without any specialist equipment or knowledge. Co-processors other than the RaspberryPi will require an adapter card or cable.
+Currently a protoype is in development in which the logic is being implemented using a small (but sadly now obsolete) Xilinx XC9536-PC44 CPLD. The first board has been built up and is successfully passing traffic back and forth between the CPC and a RaspberryPi Zero mounted on the back of, and powered by, the FIFO card.
+
+The end goal of the project is to create a card using only standard, through hole mounted, 74 Series ICs and into which a RaspberryPi can be directly inserted. There will eventually be no FPGAs, CPLDs or GALs to program at all so the final version of the project can be built easily without any specialist equipment or knowledge. Co-processors other than the RaspberryPi will require an adapter card or cable.
 
 ## Co-processor Interface
 
@@ -44,9 +46,7 @@ When data is available to the copro, the DOR signal will go high.
 To read the data the copro runs through the following sequence
 
  1. Read data on the DATA inputs
- 2. Drive the SOB signal low
- 3. Wait until DOR goes low 
- 4. Drive the SOB signal high
+ 2. Pulse the SOB signal low then high
  
 ### Writing to the FIFO
 
@@ -56,13 +56,9 @@ To write data to the FIFO the copro runs through the following sequence
 
  1. Drive the WriteNotRead signal high
  2. Drive the byte to be written onto the DATA lines
- 3. Drive the SI signal high
- 4. Wait until DIR goes low
- 5. Drive the SI signal low
+ 3. Pulse the SI signal high then low
 
-### Speeding up Coprocessor Operations
-
-In practice the 74HCT40105 FIFO ICs used are fast enough that the handshaking step (step 3 in the read process, step 4 in the write process) can usually be omitted. If so then care should be taken that the SOB or SI pulse does not violate the minimum pulse width specification (~18MHz) in the [75HCT40105 Datasheet](https://assets.nexperia.com/documents/data-sheet/74HC40105.pdf)
+Take care that the SOB or SI pulse does not violate the minimum pulse width specification (~18MHz) in the [75HCT40105 Datasheet](https://assets.nexperia.com/documents/data-sheet/74HC40105.pdf)
 
 ## Host/CPC Interface
 
