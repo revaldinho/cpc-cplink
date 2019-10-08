@@ -10,8 +10,8 @@ The project provides
 - PCB layout and schematics
 - Logic description in Verilog for the CPLD based prototype
 - Documentation
--- Circuit description and programming information
--- Bill of materials for full construction details
+  - Circuit description and programming information
+  - Bill of materials for full construction details
 - Example software to demonstrate and test the interface
 
 All code and documentation for this project is made available under the GPL3 open source license.
@@ -99,15 +99,15 @@ When the FIFO has space to write new data from the host, the DIR bit in the stat
 
      100 GOSUB 1000 : 'initialise functions and FIFO
      105 ' Wait for FIFO and put a byte out
-     110 while FNbout_rdy == 0 : WEND
+     110 while FNdir == 0 : WEND
      120 OUT &FD80, &AA : 'write &AA to FIFO
-     130 while FNbin_rdy == 0: WEND 
+     130 while FNdor == 0: WEND 
      140 bytein = INP(&FD80) 
      150 END
      
     999 'CPC host code define functions and initialise FIFO
-    1000 DEF FNbin_rdy  = INP( &FD81 ) AND &02 
-    1010 DEF FNbout_rdy = INP( &FD81 ) AND &01 
+    1000 DEF FNdir = INP( &FD81 ) AND &02 
+    1010 DEF FNdor = INP( &FD81 ) AND &01 
     1030 OUT &FD81,00 : 'reset FIFO
     1070 return
 
