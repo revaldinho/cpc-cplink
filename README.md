@@ -1,6 +1,8 @@
 # cpc-cplink
 A co-processor link card for Amstrad CPC Computers
 
+![Board Front Image](https://raw.githubusercontent.com/revaldinho/cpc-cplink/master/doc/CPCCPLINKFront.jpg)
+
 ### Outline 
 This project is a generic coprocessor interface card for the CPC using a simple message passing protocol. Voltage level shifting components are included so that both 3V3 and 5V co-processors can be connected directly. Most likely the co-processor will be a RaspberryPi, but the simple First-In First-Out (FIFO) interface is suitable for other processors and systems too including Arduinos, Teensy and PIC MCUs.
 
@@ -252,4 +254,9 @@ More notes on board construction are provided on the following pages:
 - [v0.2 Prototype Construction](https://github.com/revaldinho/cpc-cplink/blob/master/doc/cplink_v0.2_construction.md)
 
 
+## Gallery
+
+![Board Front Image](https://raw.githubusercontent.com/revaldinho/cpc-cplink/master/doc/CPCCPLINKFront.jpg)
+![Board Rear Image](https://raw.githubusercontent.com/revaldinho/cpc-cplink/master/doc/CPCCPLINKRear.jpg)
+![Board in EXP4 Image](https://raw.githubusercontent.com/revaldinho/cpc-cplink/master/doc/CPCCPLINKinExpBoard.jpg)
 
