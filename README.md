@@ -194,7 +194,7 @@ Now start the CPC running:
 
 and you should see something like this
 
-[Loopback screenshot](https://raw.githubusercontent.com/revaldinho/cpc-cplink/master/doc/RPi_loopback_scrn.png)
+![Loopback screenshot](https://raw.githubusercontent.com/revaldinho/cpc-cplink/master/doc/RPi_loopback_scrn.png)
 
 Theoretically the data rate that the CPC can support is around 50KBytes/s, but you will see numbers much lower than this with this demo. This is typical of what I see with my CPC464 and RaspberryPi Zero, and it's the RPi which is the limiting factor here. Using the GPIO library under Python with all the other overheads of a full Linux distribution isn't a recipe for IO speed. A faster RPi with more cores would help of course, as would writing in a compiled language rather than interpreted Python. Addressing the GPIO registers directly rather than through an API (and RPI.GPIO is particularly slow) would also be a good optimization, and ultimately running a bare-metal application would give the best performance (e.g. see PiTubeDirect) but loses some of the attraction of picking a RPi in the first place. 
 
