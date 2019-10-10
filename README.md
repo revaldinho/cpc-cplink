@@ -91,23 +91,115 @@ The read and write process for the host is much simpler than for the coprocessor
 
 When data is available to the host, the DOR bit in the status register will go high. So to read from the FIFO the host just needs to poll the FIFO status register and if the DOR bit is set to '1' then read from the FIFO Data IO register.
 
-When the FIFO has space to write new data from the host, the DIR bit in the status register will go high. So again the procedure is just to poll the FIFO status register and if the DIR bit is set to '1' then write to the FIFO Data IO register
+When the FIFO has space to write new data from the host, the DIR bit in the status register will go high. So again the procedure is just to poll the FIFO status register and if the DIR bit is set to '1' then write to the FIFO Data IO register.
 
- Example code in Locomotive BASIC to access the FIFO is shown below
+## Example Code
 
-     100 GOSUB 1000 : 'initialise functions and FIFO
-     105 ' Wait for FIFO and put a byte out
-     110 while FNdir == 0 : WEND
-     120 OUT &FD80, &AA : 'write &AA to FIFO
-     130 while FNdor == 0: WEND 
-     140 bytein = INP(&FD80) 
-     150 END
-     
-    999 'CPC host code define functions and initialise FIFO
-    1000 DEF FNdir = INP( &FD81 ) AND &02 
-    1010 DEF FNdor = INP( &FD81 ) AND &01 
-    1030 OUT &FD81,00 : 'reset FIFO
-    1070 return
+This is a short demonstration of the FIFO in use between the CPC using BASIC, and a RaspberryPi (RPi) running Python in a full Raspbian (Linux) distribution.
+
+The Python code for the RPi uses the standard GPIO.RPi library to control the GPIO pins. The code demonstrates how to check flags and read/write bytes to the FIFO as the RPi loops endlessly, listening for incoming data on one FIFO and echoing it back out through the other.
+
+```
+import RPi.GPIO as gpio
+from collections import deque
+
+#define BCM Pin Allocations
+PIN_DATA = [11,10,9,8,7,4,3,2] # Data[7:0]
+PIN_DIR = 17
+PIN_SI = 18
+PIN_SOB = 22
+PIN_DOR = 23
+PIN_WNR = 24
+
+def setup_pins():
+    gpio.setmode(gpio.BCM)
+    gpio.setup(PIN_DATA,gpio.IN)
+    gpio.setup(PIN_DIR, gpio.IN)
+    gpio.setup(PIN_DOR, gpio.IN)
+    gpio.setup(PIN_SI, gpio.OUT, initial=gpio.LOW)
+    gpio.setup(PIN_SOB, gpio.OUT, initial=gpio.HIGH)
+    gpio.setup(PIN_WNR, gpio.OUT, initial=gpio.LOW)
+
+def write_fifo_byte(txdata):
+    gpio.output(PIN_WNR,gpio.HIGH)
+    for (b,d) in zip(PIN_DATA,txdata):
+        gpio.setup(b, gpio.OUT, initial=d)
+    gpio.output(PIN_SI, gpio.HIGH)
+    gpio.output(PIN_SI, gpio.LOW)
+    for b in PIN_DATA:
+        gpio.setup(b, gpio.IN)
+    gpio.output(PIN_WNR, gpio.LOW)
+
+def read_fifo_byte():
+    rcv = []
+    for b in PIN_DATA:
+        rcv.append(gpio.input(b))
+    gpio.output(PIN_SOB, gpio.LOW)
+    gpio.output(PIN_SOB, gpio.HIGH)
+    return(rcv)
+
+if __name__ == "__main__":
+    setup_pins()
+    write_queue = deque(maxlen=1024)
+    while True:
+        if gpio.input(PIN_DOR):
+            write_queue.append(read_fifo_byte())
+        if len(write_queue)>0 and gpio.input(PIN_DIR):
+            write_fifo_byte(write_queue.pop())
+```
+
+The BASIC code for the CPC creates  an array of 1024 random bytes, transmits the bytes to the RPi and receives them back from the RPi before checking that received data matches transmission and reporting data rates and any errors
+
+```
+10 DEFINT a-z
+20 MODE 2
+30 DIM tx[1024]: 'transmit data buffer
+40 DIM rx[1024]: 'receive data buffer
+50 GOSUB 1000  :'reset FIFO and def fn
+60 PRINT "Setting up random data"
+70 FOR i=0 TO 1023:tx[i]=INT(RND*256):NEXT i
+80 i=0: 'tx byte count
+90 j=0: 'rx byte count
+100 s!=TIME
+110 PRINT "Sending/Receiving Data"
+120 WHILE i<1024 OR j<1024
+130   IF i<1024 AND FNdir=1 THEN OUT &FD80,tx[i] :i=i+1
+140   IF j<1024 AND FNdor=1 THEN rx[j]=INP(&FD80):j=j+1
+150 WEND
+160 dur!=(TIME-s!)/300:'timer in 300ths of sec
+170 PRINT "Bytes sent: ";i
+171 PRINT "Bytes Received: ";j
+172 PRINT "Time: ";dur!;" s "
+173 PRINT "Data rate: ";(1024*2)/dur!;" Bytes/s"
+180 PRINT "Checking Data ...";
+190 e=0
+200 FOR i=0 TO 1024:IF rx[i]<>tx[i] THEN e=e+1: NEXT
+210 IF e=0 THEN PRINT "No errors" ELSE PRINT e;" errors detected"
+220 END
+1000 'reset FIFO and setup FN defs
+1010 DEF FNdir=((INP (&FD81)) AND 2)\2
+1020 DEF FNdor=(INP (&FD81)) AND 1
+1030 OUT &FD81,0 : 'reset FIFO
+1040 RETURN
+
+```
+To run the demo, save the python script as loopback.py on the RPi and the BASIC code as fifo.bas on the CPC (both are included in the sw/ directory). Then startup the RPi script first:
+
+    python fifo.py
+
+Now start the CPC running:
+
+    LOAD "FIFO.BAS
+    RUN
+
+and you should see something like this
+
+[Loopback screenshot](https://raw.githubusercontent.com/revaldinho/cpc-cplink/master/doc/RPi_loopback_scrn.png)
+
+Theoretically the data rate that the CPC can support is around 50KBytes/s, but you will see numbers much lower than this with this demo. This is typical of what I see with my CPC464 and RaspberryPi Zero, and it's the RPi which is the limiting factor here. Using the GPIO library under Python with all the other overheads of a full Linux distribution isn't a recipe for IO speed. A faster RPi with more cores would help of course, as would writing in a compiled language rather than interpreted Python. Addressing the GPIO registers directly rather than through an API (and RPI.GPIO is particularly slow) would also be a good optimization, and ultimately running a bare-metal application would give the best performance (e.g. see PiTubeDirect) but loses some of the attraction of picking a RPi in the first place. 
+
+Another route to high IO performance is to go with an Arduino type co-processor. I recommend the Teensy parts, and the card is fully compatible with all of these, including the latest Teensy 4.0, with a suitable cable adapter for the different pin-outs.
+The main point is that any of these external environments will work: the FIFO board takes care of all timing critical signalling and the necessary voltage level shifting to accommodate both 3V3 and 5V co-processors. The rest is up to you.
 
 ## Hardware Configuration and Options
 
@@ -150,7 +242,6 @@ data    =====**======================**===============================**
 
 Notes
 - Glue logic implemented in CPLD in prototype but replaced with 74 series logic in final version
-
 
 ### Coprocessor Physical Interface
 
@@ -252,6 +343,7 @@ Notes
 More notes on board construction are provided on the following pages:
 
 - [v0.2 Prototype Construction](https://github.com/revaldinho/cpc-cplink/blob/master/doc/cplink_v0.2_construction.md)
+
 
 
 ## Gallery
