@@ -29,9 +29,7 @@ def write_fifo_byte(txdata):
     gpio.output(PIN_WNR, gpio.LOW)
 
 def read_fifo_byte():
-    rcv = []
-    for b in PIN_DATA:
-        rcv.append(gpio.input(b))
+    rcv = [ gpio.input(b) for b in PIN_DATA ]
     gpio.output(PIN_SOB, gpio.LOW)
     gpio.output(PIN_SOB, gpio.HIGH)
     return(rcv)

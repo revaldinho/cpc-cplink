@@ -131,9 +131,7 @@ def write_fifo_byte(txdata):
     gpio.output(PIN_WNR, gpio.LOW)
 
 def read_fifo_byte():
-    rcv = []
-    for b in PIN_DATA:
-        rcv.append(gpio.input(b))
+    rcv = [gpio.input(b) for b in PIN_DATA]
     gpio.output(PIN_SOB, gpio.LOW)
     gpio.output(PIN_SOB, gpio.HIGH)
     return(rcv)
@@ -160,11 +158,11 @@ The BASIC code for the CPC creates  an array of 1024 random bytes, transmits t
 70 FOR i=0 TO 1023:tx[i]=INT(RND*256):NEXT i
 80 i=0: 'tx byte count
 90 j=0: 'rx byte count
-100 s!=TIME
-110 PRINT "Sending/Receiving Data"
-120 WHILE i<1024 OR j<1024
-130   IF i<1024 AND FNdir=1 THEN OUT &FD80,tx[i] :i=i+1
-140   IF j<1024 AND FNdor=1 THEN rx[j]=INP(&FD80):j=j+1
+100 PRINT "Sending/Receiving Data"
+110 s!=TIME
+120 WHILE i+j<>2048
+130   IF i<>1024 AND FNdir=1 THEN OUT &FD80,tx[i] :i=i+1
+140   IF j<>1024 AND FNdor=1 THEN rx[j]=INP(&FD80):j=j+1
 150 WEND
 160 dur!=(TIME-s!)/300:'timer in 300ths of sec
 170 PRINT "Bytes sent: ";i
@@ -177,11 +175,10 @@ The BASIC code for the CPC creates  an array of 1024 random bytes, transmits t
 210 IF e=0 THEN PRINT "No errors" ELSE PRINT e;" errors detected"
 220 END
 1000 'reset FIFO and setup FN defs
-1010 DEF FNdir=((INP (&FD81)) AND 2)\2
-1020 DEF FNdor=(INP (&FD81)) AND 1
+1010 DEF FNdir=(INP (&FD81) AND 2)\2
+1020 DEF FNdor=INP (&FD81) AND 1
 1030 OUT &FD81,0 : 'reset FIFO
 1040 RETURN
-
 ```
 To run the demo, save the python script as loopback.py on the RPi and the BASIC code as fifo.bas on the CPC (both are included in the sw/ directory). Then startup the RPi script first:
 
