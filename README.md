@@ -95,7 +95,7 @@ When the FIFO has space to write new data from the host, the DIR bit in the stat
 
 ## Example Code
 
-This is a short demonstration of the FIFO in use between the CPC using BASIC, and a RaspberryPi (RPi) running Python in a full Raspbian (Linux) distribution.
+This is a short and rather pedestrian demonstration of the FIFO in use between the CPC using BASIC, and a RaspberryPi (RPi) running Python in a full Raspbian (Linux) distribution.
 
 The Python code for the RPi uses the standard GPIO.RPi library to control the GPIO pins. The code demonstrates how to check flags and read/write bytes to the FIFO as the RPi loops endlessly, listening for incoming data on one FIFO and echoing it back out through the other.
 
@@ -182,21 +182,17 @@ The BASIC code for the CPC creates  an array of 1024 random bytes, transmits t
 ```
 To run the demo, save the python script as loopback.py on the RPi and the BASIC code as fifo.bas on the CPC (both are included in the sw/ directory). Then startup the RPi script first:
 
-    python fifo.py
+    python loopback.py
 
 Now start the CPC running:
 
-    LOAD "FIFO.BAS
-    RUN
+    RUN "FIFO.BAS
 
 and you should see something like this
 
 ![Loopback screenshot](https://raw.githubusercontent.com/revaldinho/cpc-cplink/master/doc/RPi_loopback_scrn.png)
 
-Theoretically the data rate that the CPC can support is around 50KBytes/s, but you will see numbers much lower than this with this demo. This is typical of what I see with my CPC464 and RaspberryPi Zero, and it's the RPi which is the limiting factor here. Using the GPIO library under Python with all the other overheads of a full Linux distribution isn't a recipe for IO speed. A faster RPi with more cores would help of course, as would writing in a compiled language rather than interpreted Python. Addressing the GPIO registers directly rather than through an API (and RPI.GPIO is particularly slow) would also be a good optimization, and ultimately running a bare-metal application would give the best performance (e.g. see PiTubeDirect) but loses some of the attraction of picking a RPi in the first place. 
-
-Another route to high IO performance is to go with an Arduino type co-processor. I recommend the Teensy parts, and the card is fully compatible with all of these, including the latest Teensy 4.0, with a suitable cable adapter for the different pin-outs.
-The main point is that any of these external environments will work: the FIFO board takes care of all timing critical signalling and the necessary voltage level shifting to accommodate both 3V3 and 5V co-processors. The rest is up to you.
+Theoretically the data rate that the CPC can support is around 50KBytes/s, but you will see numbers much lower than this with this demo. The main limitation here is the CPC BASIC loop: even without checking flags the loop takes around 16s to execute. Enabling the Pi adds only about 0.04s on to that and RPi.GPIO is known as one of the slower libraries executing in an interpreted language here. So, some faster CPC code is called for to do a better job - I'll make some assembler and maybe Pascal or BCPL examples available in the repository.
 
 ## Hardware Configuration and Options
 
