@@ -153,7 +153,7 @@ The BASIC code for the CPC creates  an array of 1024 random bytes, transmits t
 20 MODE 2
 30 DIM tx[1024]: 'transmit data buffer
 40 DIM rx[1024]: 'receive data buffer
-50 GOSUB 1000  :'reset FIFO and def fn
+50 OUT &FD81,0
 60 PRINT "Setting up random data"
 70 FOR i=0 TO 1023:tx[i]=INT(RND*256):NEXT i
 80 i=0: 'tx byte count
@@ -161,8 +161,8 @@ The BASIC code for the CPC creates  an array of 1024 random bytes, transmits t
 100 PRINT "Sending/Receiving Data"
 110 s!=TIME
 120 WHILE i+j<>2048
-130   IF i<>1024 AND FNdir=1 THEN OUT &FD80,tx[i] :i=i+1
-140   IF j<>1024 AND FNdor=1 THEN rx[j]=INP(&FD80):j=j+1
+130   IF i<>1024 AND (INP(&FD81) AND 2) THEN OUT &FD80,tx[i] :i=i+1
+140   IF j<>1024 AND (INP(&FD81) AND 1) THEN rx[j]=INP(&FD80):j=j+1
 150 WEND
 160 dur!=(TIME-s!)/300:'timer in 300ths of sec
 170 PRINT "Bytes sent: ";i
@@ -171,15 +171,11 @@ The BASIC code for the CPC creates  an array of 1024 random bytes, transmits t
 173 PRINT "Data rate: ";(1024*2)/dur!;" Bytes/s"
 180 PRINT "Checking Data ...";
 190 e=0
-200 FOR i=0 TO 1024:IF rx[i]<>tx[i] THEN e=e+1: NEXT
+200 FOR i=0 TO 1024:IF rx[i]<>tx[i] THEN e=e+1: PRINT rx[i],tx[i]: NEXT
 210 IF e=0 THEN PRINT "No errors" ELSE PRINT e;" errors detected"
 220 END
-1000 'reset FIFO and setup FN defs
-1010 DEF FNdir=(INP (&FD81) AND 2)\2
-1020 DEF FNdor=INP (&FD81) AND 1
-1030 OUT &FD81,0 : 'reset FIFO
-1040 RETURN
 ```
+
 To run the demo, save the python script as loopback.py on the RPi and the BASIC code as fifo.bas on the CPC (both are included in the sw/ directory). Then startup the RPi script first:
 
     python loopback.py
@@ -192,7 +188,7 @@ and you should see something like this
 
 ![Loopback screenshot](https://raw.githubusercontent.com/revaldinho/cpc-cplink/master/doc/RPi_loopback_scrn.png)
 
-Theoretically the data rate that the CPC can support is around 50KBytes/s, but you will see numbers much lower than this with this demo. The main limitation here is the CPC BASIC loop: even without checking flags the loop takes around 16s to execute. Enabling the Pi adds only about 0.04s on to that and RPi.GPIO is known as one of the slower libraries executing in an interpreted language here. So, some faster CPC code is called for to do a better job - I'll make some assembler and maybe Pascal or BCPL examples available in the repository.
+Theoretically the data rate that the CPC can support is around 50KBytes/s, but you will see numbers much lower than this with this demo. The main limitation here is the CPC BASIC loop: even without checking flags the loop takes around 13s to execute. Enabling the Pi adds nothing measurable to that and RPi.GPIO is known as one of the slower libraries executing in an interpreted language here. So, some faster CPC code is called for to do a better job - I'll make some assembler and maybe Pascal or BCPL examples available in the repository.
 
 ## Hardware Configuration and Options
 
