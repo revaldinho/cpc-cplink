@@ -188,7 +188,9 @@ and you should see something like this
 
 ![Loopback screenshot](https://raw.githubusercontent.com/revaldinho/cpc-cplink/master/doc/RPi_loopback_scrn.png)
 
-Theoretically the data rate that the CPC can support is around 50KBytes/s, but you will see numbers much lower than this with this demo. The main limitation here is the CPC BASIC loop: even without checking flags the loop takes around 13s to execute. Enabling the Pi adds nothing measurable to that and RPi.GPIO is known as one of the slower libraries executing in an interpreted language here. So, some faster CPC code is called for to do a better job - I'll make some assembler and maybe Pascal or BCPL examples available in the repository.
+Theoretically the data rate that the CPC can support is around 50KBytes/s, but you will see numbers much lower than this with this demo. The main limitation here is the CPC BASIC loop: even without checking flags the loop takes around 13s to execute. Enabling the Pi adds nothing measurable to that and RPi.GPIO is known as one of the slower libraries executing in an interpreted language here. So, some faster CPC code is called for to do a better job and as a first stab at this there is a BCPL version of the CPC FIFO code in the sw/cpc_bcpl directory. This one is intended for compiling with Arnor's CPC BCPL and is already orders of magnitude faster than the BASIC. Here's the screenshot from the BCPL run with the Raspberry Pi still executing the same Python code.
+
+![BCPL Loopback screenshot](https://raw.githubusercontent.com/revaldinho/cpc-cplink/master/doc/RPi_loopback_BCPL.png)
 
 ## Hardware Configuration and Options
 
