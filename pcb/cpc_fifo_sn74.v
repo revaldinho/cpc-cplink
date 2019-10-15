@@ -87,7 +87,7 @@ module cpc_fifo_sn74 ();
   //
   // V1.01 Corrected upper and lower rows
 
-  idc_hdr_50w  CONN1 (
+  idc_hdr_50w  HDR1 (
                       .p50(Sound),   .p49(VSS),
                       .p48(A15),     .p47(A14),
                       .p46(A13),     .p45(A12),
@@ -212,9 +212,9 @@ module cpc_fifo_sn74 ();
                     .i0(A15), 	.vdd(VDD),
                     .i1(A14), 	.nc1(),
                     .i2(A13), 	.i6(A8),
-                    .i3(A12), 	.i7(A7),
+                    .i3(A12), 	.i7(A10),
                     .i4(A11), 	.nc2(),
-                    .i5(A10), 	.nc3(),
+                    .i5(A7), 	.nc3(),
                     .vss(VSS), 	.o(n1),
                     );
 
@@ -228,15 +228,14 @@ module cpc_fifo_sn74 ();
                      .o0(n2),		.o1(n3),
                      .vss(VSS), 	.i1_2(A5),
                      );
-  
-  SN7427 u_2  (
-                    .i0_0(n2), 		.vdd(VDD),
-                    .i0_1(WR_B),	.i0_2(a0_b),
-                    .i1_0(WR_B),	.o0(host_fifo_reset),
-                    .i1_1(n2),		.i2_0(n2),
-                    .i1_2(A0),	 	.i2_1(A0),
-                    .o1(host_fifo_si), .i2_2(RD_B),
-                    .vss(VSS), 		.o2(host_fifo_sob),
+  SN74126 u_2  (
+                    .en0(fifo_status_oe), 	.vdd(VDD),
+                    .i0(fifo_host_dor), 	.en3(fifo_status_oe),
+                    .o0(D0), 			.i3(VSS),
+                    .en1(fifo_status_oe), 	.o3(D3),
+                    .i1(fifo_host_dir), 	.en2(fifo_status_oe),
+                    .o1(D1), 			.i2(VSS),
+                    .vss(VSS), 			.o2(D2),
                     );
   
   SN7427 u_3  (
@@ -249,17 +248,18 @@ module cpc_fifo_sn74 ();
                     .vss(VSS), 			.o2(host_fifo_oeb),
                     );
   
-  SN74126 u_4  (
-                    .en0(fifo_status_oe), 	.vdd(VDD),
-                    .i0(fifo_host_dor), 	.en3(fifo_status_oe),
-                    .o0(D0), 			.i3(VSS),
-                    .en1(fifo_status_oe), 	.o3(D3),
-                    .i1(fifo_host_dir), 	.en2(fifo_status_oe),
-                    .o1(D1), 			.i2(VSS),
-                    .vss(VSS), 			.o2(D2),
+  
+  SN7427 u_4  (
+                    .i0_0(n2), 		.vdd(VDD),
+                    .i0_1(WR_B),	.i0_2(a0_b),
+                    .i1_0(WR_B),	.o0(host_fifo_reset),
+                    .i1_1(n2),		.i2_0(n2),
+                    .i1_2(A0),	 	.i2_1(A0),
+                    .o1(host_fifo_si), .i2_2(RD_B),
+                    .vss(VSS), 		.o2(host_fifo_sob),
                     );
 
-  hdr2x20 CONN2 (
+  hdr2x20 HDR2 (
                  .p1(VDD_3V3),     .p2(VDD_PI),
                  .p3(PI_GPIO_02),  .p4(VDD_PI),
 		 .p5(PI_GPIO_03),  .p6(VSS),
@@ -284,22 +284,22 @@ module cpc_fifo_sn74 ();
   
   
   // Radial electolytic, one each on the main 5V and incoming 3V3 supply
-  cap22uf         CAP22UF_5V(.minus(VSS),.plus(VDD));
-  cap22uf         CAP22UF_IO(.minus(VSS),.plus(VDD_3V3));
+  cap22uf  C22UF_5V(.minus(VSS),.plus(VDD));
+  cap22uf  C22UF_IO(.minus(VSS),.plus(VDD_3V3));
   
   // Decoupling caps for the main 74 Series logic and FIFOs
-  cap100nf CAP100N_1 (.p0( VSS ), .p1( VDD ));
-  cap100nf CAP100N_2 (.p0( VSS ), .p1( VDD ));
-  cap100nf CAP100N_3 (.p0( VSS ), .p1( VDD ));
-  cap100nf CAP100N_4 (.p0( VSS ), .p1( VDD ));
-  cap100nf CAP100N_5 (.p0( VSS ), .p1( VDD ));
-  cap100nf CAP100N_6 (.p0( VSS ), .p1( VDD ));
-  cap100nf CAP100N_7 (.p0( VSS ), .p1( VDD ));
-  cap100nf CAP100N_8 (.p0( VSS ), .p1( VDD ));
-  cap100nf CAP100N_9 (.p0( VSS ), .p1( VDD ));
+  cap100nf C0 (.p0( VSS ), .p1( VDD ));  
+  cap100nf C1 (.p0( VSS ), .p1( VDD ));
+  cap100nf C2 (.p0( VSS ), .p1( VDD ));
+  cap100nf C3 (.p0( VSS ), .p1( VDD ));
+  cap100nf C4 (.p0( VSS ), .p1( VDD ));
+  cap100nf C5 (.p0( VSS ), .p1( VDD ));
+  cap100nf C6 (.p0( VSS ), .p1( VDD ));
+  cap100nf C7 (.p0( VSS ), .p1( VDD ));
+  cap100nf C8 (.p0( VSS ), .p1( VDD ));
   
   // Decoupling for the level shifters
-  cap100nf CAP100N_10 (.p0( VSS ), .p1( VDD_IO ));
-  cap100nf CAP100N_11 (.p0( VSS ), .p1( VDD_IO ));    
+  cap100nf C9 (.p0( VSS ), .p1( VDD_IO ));
+  cap100nf C10 (.p0( VSS ), .p1( VDD_IO ));    
   
 endmodule
