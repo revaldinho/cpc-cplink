@@ -1,9 +1,10 @@
 #!/bin/tcsh -f
 
-set project = cpc_fifo
+#set project = cpc_fifo
+set project = cpc_fifo_sn74
 
 # Need to have access to the Jython netlister program
-set netlister_dir = ~/Documents/Development/git/netlister
+set netlister_dir = ~/Documents/nas/Development/git/netlister
 which netlister.py > /dev/null
 if ($status != 0) then
    setenv CLASSPATH ${netlister_dir}/src:$CLASSPATH

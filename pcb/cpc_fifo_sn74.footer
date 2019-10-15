@@ -1,0 +1,117 @@
+# Maximum Eagle freeware board size is 4.0x3.2" (100x80mm) 
+
+# better to work in inches for 0.1 inch pad pitch
+Grid default;
+Set Wire_Bend 0;
+Layer Dimension;
+Wire 0  (0 0) (3.9 3.2) (0 0);
+Layer Top;
+
+
+# PI-Zero fixing holes
+ADD 2,8@holes H1 R0 (3.64 2.90); # hdr1x03
+ADD 2,8@holes H2 R0 (1.36 2.90); # hdr1x03
+
+# Caps
+ROTATE =R90 CAP22UF_5V ; 
+MOVE CAP22UF_5V    (3.55 0.35 ) ;
+ROTATE =R0 CAP22UF_IO ; 
+MOVE CAP22UF_IO    (0.65 2.85 ) ;
+
+ROTATE =R0 CAP100N_1 ; 
+MOV CAP100N_1      (1.05 0.95) ;
+ROTATE =R270 CAP100N_2 ; 
+MOV CAP100N_2      (3.75 0.9) ;
+ROTATE =R270 CAP100N_3 ; 
+MOV CAP100N_3      (3.75 1.65) ;
+ROTATE =R270 CAP100N_4 ; 
+MOV CAP100N_4      (1.45 1.80) ;
+ROTATE =R270 CAP100N_5 ; 
+MOV CAP100N_5      (2.70 0.9) ;
+ROTATE =R270 CAP100N_6 ; 
+MOV CAP100N_6      (2.70 1.65) ;
+# 3V3 decoupling cap
+ROTATE =R270 CAP100N_10 ; 
+MOV CAP100N_7      (3.75 2.40) ;
+ROTATE =R270 CAP100N_11 ; 
+MOV CAP100N_8      (2.50 2.40) ;
+
+# connectors
+ROTATE =R180 CONN1 ;
+MOVE CONN1         (1.95 0.25) ;
+ROTATE =R0 CONN2 ;
+MOVE CONN2         (2.50 2.90) ;
+ROTATE =R0 UART ;
+MOVE UART          (0.9 2.6);
+ROTATE =R0 J1 ;
+MOVE J1            (0.45 2.6) ;  
+ROTATE =R270 J2 ;
+MOVE J2            (0.35 2.9) ;  
+
+
+ROTATE =R180 LS_1;
+MOVE LS_1           (1.9 2.4) ;
+ROTATE =R180 LS_0;
+MOVE LS_0           (3.15 2.4) ;
+ROTATE =R180 FIFO0_1;
+MOVE FIFO0_0        (2.20 0.9) ;
+ROTATE =R180 FIFO1_1;
+MOVE FIFO0_1        (2.20 1.65) ;
+ROTATE =R180 FIFO0_0;
+MOVE FIFO1_0        (3.25 0.9) ;
+ROTATE =R180 FIFO1_0;
+MOVE FIFO1_1        (3.25 1.65) ;
+
+Layer tPlace ;
+CHANGE FONT PROPORTIONAL ; 
+CHANGE SIZE 0.06
+TEXT 'CPC-CPLINK CPC Coprocessor Link v0.2' R0 (1.6 3.1) ;
+CHANGE SIZE 0.04
+TEXT '(C) 2019 Revaldinho, github.com/revaldinho/cpc-cplink'  R90      (0.1 0.1) ;
+
+CHANGE FONT FIXED ; 
+CHANGE SIZE 0.03 ;
+CHANGE WIDTH 0.01 ;
+WIRE  (0.15 0.95) (0.15 1.5) (0.35 1.5 ) (0.35 0.95) ( 0.15 0.95 ) ;
+TEXT 'GND  TDI  TCK  NC' R90 (0.2 0.99) ;
+TEXT 'GND  TMS  TDO  5V' R90 (0.3 0.99) ;
+TEXT '+5V VDDIO +3V3' R0  (0.28 2.5) ;
+TEXT 'GND TxD RxD' R0  (0.76 2.5) ;
+TEXT 'WARNING: DO NOT CLOSE J2 WHEN USING 'R0 (0.05 3.10) ;
+TEXT '         EXTERNAL COPROCESSOR POWER' R0 (0.05 3.05) ;
+
+
+
+# Preroute VDD and VSS rings
+layer top;
+wire  0.04;
+wire  'VDD' (0.06 0.06) ( 3.84 0.06) (3.84 3.14) (0.06 3.14) (0.06 0.06) ;
+layer bottom;
+wire  0.04;
+wire  'VSS' (0.06 0.06) ( 3.84 0.06) (3.84 3.14) (0.06 3.14) (0.06 0.06) ;
+
+
+# PCB-Pool/PCB-Train design rule is actually 0.006/0.006 for wires
+CLASS 0 signal 0.010 0.009 ;
+CLASS 1 supply 0.035 0.014 ;
+# Autorouter
+AUTO load /tmp/autorouter.ctl;
+# Route clock and supplies first using wide power
+AUTO ;
+# Reduce power width for CPLD final connections when routing rest of nets
+CLASS 1 supply 0.020 0.009 ;
+AUTO ;
+
+# Define power fills top and bottom over whole board area
+layer Top ; 
+polygon VDD 0.08 (0 0) (0 3.2) (3.9 3.2) (3.9 0) (0 0) ;
+   
+layer Bottom ; 
+polygon VSS 0.08 (0 0) (0 3.2) (3.9 3.2) (3.9 0) (0 0) ;
+  
+
+Ratsnest ;  ## Calculate and display polygons
+
+
+Window Fit;
+
