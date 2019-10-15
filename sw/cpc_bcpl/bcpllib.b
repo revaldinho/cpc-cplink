@@ -1,4 +1,4 @@
-// (c)  Copyright:  Martin Richards  30 April 2014
+// Portions of this code (c)  Copyright:  Martin Richards  30 April 2014
 //
 // Reduced BCPLLIB to use with Amstrad CPC BCPL system with rdch/wrch remapped to
 // System calls. Rev. Oct 2017
