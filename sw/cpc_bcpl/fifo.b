@@ -5,16 +5,14 @@ MANIFEST $(
 $)
 
 LET fifo_in(p) = VALOF $(
-    // Return 0 if no data available, otherwise return 1 and use the
-    // parameter p as a pointer for the actual byte read
     LET f=0
     LET r=#x0A
     
     inline #x01,#x81,#xFD       // LD   bc,0xfd81   # status reg
     inline #xED,#x78            // IN   a,(c)       
     inline #xE6,#x01            // AND  0x1   
+    inline #x28,#x09            // JR   z,end2      # exit if zero
     inline #xDD,#x77,#x76       // LD   (ix+118),a  # save DOR state to f low byte 
-    inline #x28,#x06            // JR   z,end2      # exit if zero
     inline #x0D                 // DEC  c           # point to data reg
     inline #xED,#x78            // IN   a,(c)       # a <- fifo input
     inline #xDD,#x77,#x74       // LD   (ix+116), a # r (low) <- a
@@ -39,16 +37,15 @@ AND fifo_out(c) = VALOF $(
     // f        [lo] <- IX+118
     LET f=0
     
-    inline #x01,#x81,#xFD    //   LD   BC,0xFD81   # status reg
-    inline #xED,#x78         //   IN   A,(C)       
-    inline #xCB,#x2F         //   SRA   A   
-    inline #xE6,#x01         //   AND   0x01   
-    inline #xDD,#x77,#x76    //   LD   (IX+118),A  # save DIR state in f low byte 
-    inline #x28,#x06         //   JR   Z,END       # skip to end if zero
-    inline #xDD,#x7E,#x7E    //   LD   A,(ix+126)  # get parameter low byte
-    inline #x0D              //   DEC   C          # point to data reg
-    inline #xED,#x79         //   OUT   (C),a      # write the byte
-                             // END:        
+    inline #x01,#x81,#xFD      //   LD   BC,0xFD81   # status reg
+    inline #xED,#x78           //   IN   A,(C)       
+    inline #xE6,#x02           //   AND   0x02   
+    inline #x28,#x0A           //   JR   Z,END       # skip to end if zero
+    inline #xDD,#x36,#x76,#x01 //   LD   (IX+118),1  # save DIR state in f low byte 
+    inline #xDD,#x7E,#x7E      //   LD   A,(ix+126)  # get parameter low byte
+    inline #x0D                //   DEC   C          # point to data reg
+    inline #xED,#x79           //   OUT   (C),a      # write the byte
+                               // END:        
     RESULTIS f
 $)
 
