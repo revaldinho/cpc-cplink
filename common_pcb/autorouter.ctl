@@ -107,7 +107,7 @@
 [Optimize2]
 
   @Optimize1
-
+  RoutingGrid     = 2mil
   Active          =    1
   cfNonPref       =    0
   cfChangeDir     =    6
@@ -121,7 +121,7 @@
 [Optimize3]
 
   @Optimize2
-
+  RoutingGrid     = 2mil
   Active          =    1
   cfChangeDir     =    8
   cfPadImpact     =    0
@@ -130,7 +130,7 @@
 [Optimize4]
 
   @Optimize3
-
+  RoutingGrid     = 2mil
   Active          =    1
   cfChangeDir     =   25
 

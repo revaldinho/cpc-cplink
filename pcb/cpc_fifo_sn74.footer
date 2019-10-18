@@ -10,19 +10,19 @@ Layer Top;
 
 
 # Caps
-ROTATE =R90 C22UF_5V ; 
-MOVE C22UF_5V    (3.55 0.35 ) ;
-ROTATE =R0 C22UF_IO ; 
-MOVE C22UF_IO    (0.55 2.85 ) ;
+ROTATE =R90 C22U_5V ; 
+MOVE C22U_5V    (3.55 0.35 ) ;
+ROTATE =R0 C22U_IO ; 
+MOVE C22U_IO    (0.55 2.85 ) ;
 
 # connectors
 ROTATE =R180 HDR1 ;
 MOVE HDR1         (1.95 0.25) ;
 ROTATE =R0 HDR2 ;
-MOVE HDR2         (2.50 2.90) ;
+MOVE HDR2         (2.50 2.9) ;
 # PI-Zero fixing holes
-ADD 2,8@holes H1 R0 (3.64 2.90); 
-ADD 2,8@holes H2 R0 (1.36 2.90); 
+ADD 2,8@holes H1 R0 (3.64 2.9); 
+ADD 2,8@holes H2 R0 (1.36 2.9); 
 ROTATE =R0 UART ;
 MOVE UART          (0.95 2.50);
 ROTATE =R0 J1 ;
@@ -33,50 +33,50 @@ MOVE J2            (0.20 2.90) ;
 ROTATE =R180 LS_1;
 MOVE LS_1    (1.80 2.45) ;
 ROTATE =R270 C9 ; 
-MOV C9       (2.40 2.45) ;
+MOV C9       (2.40 2.40) ;
 ROTATE =R180 LS_0;
 MOVE LS_0    (3.10 2.45) ;
 ROTATE =R270 C10 ; 
-MOV C10      (3.70 2.45) ;
+MOV C10      (3.70 2.40) ;
 
 ROTATE =R180 u_4;
 MOVE u_4     (0.55 1.90) ;
 ROTATE =R270 C6 ; 
-MOV C6       (1.05 1.90) ;
+MOV C6       (1.00 1.85) ;
 ROTATE =R180 FIFO1_0;
 MOVE FIFO1_0 (1.70 1.90) ;
 ROTATE =R270 C7 ; 
-MOV C7       (2.20 1.90) ;
+MOV C7       (2.20 1.85) ;
 ROTATE =R180 FIFO1_1;
 MOVE FIFO1_1 (3.00 1.90) ;
 ROTATE =R270 C8 ; 
-MOV C8       (3.50 1.90) ;
+MOV C8       (3.50 1.85) ;
 
 ROTATE =R180 u_3;
 MOVE u_3     (0.55 1.35) ;
 ROTATE =R270 C3 ; 
-MOV C3       (1.05 1.35) ;
+MOV C3       (1.00 1.3) ;
 ROTATE =R180 FIFO0_0;
 MOVE FIFO0_0 (1.70 1.35) ;
 ROTATE =R270 C4 ; 
-MOV C4       (2.20 1.35) ;
+MOV C4       (2.20 1.3) ;
 ROTATE =R180 FIFO0_1;
 MOVE FIFO0_1 (3.00 1.35) ;
 ROTATE =R270 C5 ; 
-MOV C5       (3.50 1.35) ;
+MOV C5       (3.50 1.3) ;
 
 ROTATE =R180 u_0;
 MOVE u_0     (0.55 0.80) ;
 ROTATE =R270 C0 ; 
-MOV C0       (1.05 0.80) ;
+MOV C0       (1.00 0.75) ;
 ROTATE =R180 u_1;
 MOVE u_1     (1.65 0.80) ;
 ROTATE =R270 C1 ; 
-MOV C1       (2.10 0.80) ;
+MOV C1       (2.10 0.75) ;
 ROTATE =R180 u_2;
 MOVE u_2     (2.95 0.80) ;
 ROTATE =R270 C2 ; 
-MOV C2       (3.40 0.80) ;
+MOV C2       (3.40 0.75) ;
 
 Layer tPlace ;
 CHANGE FONT PROPORTIONAL ; 
@@ -90,19 +90,31 @@ CHANGE SIZE 0.04 ;
 CHANGE WIDTH 0.01 ;
 TEXT '+5V VDDIO +3V3' R0  (0.15 2.35) ;
 TEXT 'GND TxD RxD' R0  (0.78 2.35) ;
-CHANGE SIZE 0.05 ;
+CHANGE SIZE 0.04 ;
 TEXT 'WARNING: DO NOT CLOSE J2 WHEN USING 'R0 (0.05 3.10) ;
 TEXT '         EXTERNAL COPROCESSOR POWER' R0 (0.05 3.05) ;
 
 # Preroute VDD and VSS rings
 layer top;
-wire  0.04;
-wire  'VDD' (0.06 0.06) ( 3.84 0.06) (3.84 3.14) (0.06 3.14) (0.06 0.06) ;
-wire  0.03;
-wire  'VDD' (0.06 1.65) ( 3.84 1.65);
+wire  0.040;
+wire  'VDD' (0.06 0.06)  (0.06 2.85)  ;
+wire  'VDD' (0.06 0.06) ( 3.84 0.06) (3.84 2.85) ;
 layer bottom;
 wire  0.04;
 wire  'VSS' (0.06 0.06) ( 3.84 0.06) (3.84 3.14) (0.06 3.14) (0.06 0.06) ;
+wire  'VSS' (1.20 2.30) ( 1.20 0.85);
+wire  'VSS' (2.30 2.10) ( 2.30 0.85);
+# Preroute some spurs 
+layer top;
+wire  0.030;
+wire  'VSS' (1.0 0.85) ( 2.10 0.85) ( 3.40 0.85);
+wire  'VSS' (2.40 2.50) ( 3.7 2.50);
+wire  'VDD_IO' (0.40 2.40) ( 3.55 2.40);
+wire  0.030;
+wire  'VDD' (0.06 1.65) ( 3.84 1.65);
+layer top;
+wire  0.04;
+wire  'VDD_PI' (0.2 2.95) (0.2 3.10) (1.55 3.10) (1.55 2.95) (1.65 2.95)
 
 # PCB-Pool/PCB-Train design rule is actually 0.006/0.006 for wires
 CLASS 0 signal 0.010 0.010 ;
@@ -110,9 +122,6 @@ CLASS 1 supply 0.030 0.015 ;
 # Autorouter
 AUTO load /tmp/autorouter.ctl;
 # Route clock and supplies first using wide power
-AUTO ;
-# Reduce power width for CPLD final connections when routing rest of nets
-CLASS 1 supply 0.020 0.009 ;
 AUTO ;
 
 ## Define power fills top and bottom over whole board area

@@ -220,22 +220,22 @@ module cpc_fifo_sn74 ();
 
   // Danger - whacky pin out
   SN74HCT4075 u_1 (
-                     .i1_0(A9), 	.vdd(VDD),
-                     .i1_1(A6), 	.i2_0(A4),
-                     .i0_0(IOREQ_B), 	.i2_1(A3),
-                     .i0_1(n4), 	.i2_2(n1),
+                     .i1_0(n1), 	.vdd(VDD),
+                     .i1_1(A3), 	.i2_0(A4),
+                     .i0_0(IOREQ_B), 	.i2_1(A5),
+                     .i0_1(n4), 	.i2_2(A6),
                      .i0_2(n3), 	.o2(n4),
                      .o0(n2),		.o1(n3),
-                     .vss(VSS), 	.i1_2(A5),
+                     .vss(VSS), 	.i1_2(A9),
                      );
   SN74126 u_2  (
                     .en0(fifo_status_oe), 	.vdd(VDD),
-                    .i0(fifo_host_dor), 	.en3(fifo_status_oe),
+                    .i0(fifo_host_dor), 	.en3(VSS),
                     .o0(D0), 			.i3(VSS),
-                    .en1(fifo_status_oe), 	.o3(D3),
-                    .i1(fifo_host_dir), 	.en2(fifo_status_oe),
+                    .en1(fifo_status_oe), 	.o3(),
+                    .i1(fifo_host_dir), 	.en2(VSS),
                     .o1(D1), 			.i2(VSS),
-                    .vss(VSS), 			.o2(D2),
+                    .vss(VSS), 			.o2(),
                     );
   
   SN7427 u_3  (
@@ -284,8 +284,8 @@ module cpc_fifo_sn74 ();
   
   
   // Radial electolytic, one each on the main 5V and incoming 3V3 supply
-  cap22uf  C22UF_5V(.minus(VSS),.plus(VDD));
-  cap22uf  C22UF_IO(.minus(VSS),.plus(VDD_3V3));
+  cap22uf  C22U_5V(.minus(VSS),.plus(VDD));
+  cap22uf  C22U_IO(.minus(VSS),.plus(VDD_3V3));
   
   // Decoupling caps for the main 74 Series logic and FIFOs
   cap100nf C0 (.p0( VSS ), .p1( VDD ));  
