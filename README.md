@@ -25,3 +25,7 @@ A first prototype has been successfully build and tested, in which the logic is 
 A second version, with all logic implemented in standard 74 series gates, has been designed and is now awaiting assembly and testing.
 
 For more detailed information refer to the [project wiki pages](https://github.com/revaldinho/cpc-cplink/wiki/CPC-CPLink).
+
+## License
+
+All programs and data files in this project are made available under the terms of the [GNU General Public License v3.](https://github.com/revaldinho/cpc_ram_expansion/blob/master/LICENSE)
