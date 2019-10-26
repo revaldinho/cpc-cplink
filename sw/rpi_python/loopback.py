@@ -15,7 +15,7 @@ def setup_pins():
     gpio.setup(PIN_DIR, gpio.IN)
     gpio.setup(PIN_DOR, gpio.IN)
     gpio.setup(PIN_SI, gpio.OUT, initial=gpio.LOW)
-    gpio.setup(PIN_SOB, gpio.OUT, initial=gpio.HIGH)
+    gpio.setup(PIN_SOB, gpio.OUT, initial=gpio.LOW)
     gpio.setup(PIN_WNR, gpio.OUT, initial=gpio.LOW)
 
 def write_fifo_byte(txdata):
@@ -30,8 +30,8 @@ def write_fifo_byte(txdata):
 
 def read_fifo_byte():
     rcv = [ gpio.input(b) for b in PIN_DATA ]
-    gpio.output(PIN_SOB, gpio.LOW)
     gpio.output(PIN_SOB, gpio.HIGH)
+    gpio.output(PIN_SOB, gpio.LOW)
     return(rcv)
 
 if __name__ == "__main__":

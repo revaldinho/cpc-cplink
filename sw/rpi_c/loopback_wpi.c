@@ -30,7 +30,7 @@ void setup_pins() {
   pinMode(PIN_SI, OUTPUT);
   digitalWrite(PIN_SI,LOW);
   pinMode(PIN_SOB, OUTPUT);
-  digitalWrite(PIN_SOB,HIGH);
+  digitalWrite(PIN_SOB,LOW);
   pinMode(PIN_WNR, OUTPUT);
   digitalWrite(PIN_WNR,LOW);
 }
@@ -43,8 +43,8 @@ void write_fifo_byte(int txdata) {
     pinMode(DATA[i], OUTPUT);
     digitalWrite(DATA[i],bit);
     txdata = txdata >> 1;
-  }  
-  digitalWrite(PIN_SI, HIGH);  
+  }
+  digitalWrite(PIN_SI, HIGH);
   delayMicroseconds(60);
   digitalWrite(PIN_SI, LOW);
   for (i=0;i<8;i++) {
@@ -59,9 +59,9 @@ int read_fifo_byte() {
   for (i=7;i>=0;i--) {
     rval = (rval << 1) + (digitalRead(DATA[i]) & 0x1);
   }
-  digitalWrite(PIN_SOB, LOW);
-  delayMicroseconds(60);  
   digitalWrite(PIN_SOB, HIGH);
+  delayMicroseconds(60);
+  digitalWrite(PIN_SOB, LOW);
   return(rval);
 }
 
@@ -76,3 +76,4 @@ void main( void ) {
     }
   }
 }
+

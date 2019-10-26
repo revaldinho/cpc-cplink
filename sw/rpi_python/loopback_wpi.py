@@ -20,7 +20,7 @@ def setup_pins():
     gpio.pinMode(PIN_SI, GPIO_OUT)
     gpio.digitalWrite(PIN_SI,0)
     gpio.pinMode(PIN_SOB, GPIO_OUT)
-    gpio.digitalWrite(PIN_SOB,1)
+    gpio.digitalWrite(PIN_SOB,0)
     gpio.pinMode(PIN_WNR, GPIO_OUT)
     gpio.digitalWrite(PIN_WNR,0)
 
@@ -37,8 +37,8 @@ def write_fifo_byte(txdata):
 
 def read_fifo_byte():
     rcv = [ gpio.digitalRead(b) for b in PIN_DATA]
-    gpio.digitalWrite(PIN_SOB, 0)
     gpio.digitalWrite(PIN_SOB, 1)
+    gpio.digitalWrite(PIN_SOB, 0)
     return(rcv)
 
 if __name__ == "__main__":
