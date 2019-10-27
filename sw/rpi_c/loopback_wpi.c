@@ -12,12 +12,12 @@
 #define PIN_SOB  22
 #define PIN_DOR  23
 #define PIN_WNR  24
-
+#define QUEUE_SZ  512
 int DATA[] = { PIN_D0, PIN_D1, PIN_D2, PIN_D3, PIN_D4, PIN_D5, PIN_D6, PIN_D7 };
 
-int queue[1024];
-int qptr = 0;
-
+int queue[QUEUE_SZ];
+int rptr = 0;
+int wptr = 0;
 
 void setup_pins() {
   int i;
@@ -37,15 +37,14 @@ void setup_pins() {
 
 void write_fifo_byte(int txdata) {
   int i, bit;
-  digitalWrite(PIN_WNR,1);
+  digitalWrite(PIN_WNR,HIGH);
   for (i=0;i<8;i++) {
     bit = (txdata & 0x1)? HIGH: LOW;
     pinMode(DATA[i], OUTPUT);
     digitalWrite(DATA[i],bit);
     txdata = txdata >> 1;
-  }
-  digitalWrite(PIN_SI, HIGH);
-  delayMicroseconds(60);
+  }  
+  digitalWrite(PIN_SI, HIGH);  
   digitalWrite(PIN_SI, LOW);
   for (i=0;i<8;i++) {
     pinMode(DATA[i], INPUT);
@@ -60,7 +59,6 @@ int read_fifo_byte() {
     rval = (rval << 1) + (digitalRead(DATA[i]) & 0x1);
   }
   digitalWrite(PIN_SOB, HIGH);
-  delayMicroseconds(60);
   digitalWrite(PIN_SOB, LOW);
   return(rval);
 }
@@ -69,11 +67,12 @@ void main( void ) {
   wiringPiSetupGpio () ;
   for (;;) {
     if (digitalRead(PIN_DOR)) {
-      queue[qptr++] = read_fifo_byte();
+      queue[rptr] = read_fifo_byte();
+      rptr = (rptr+1) % QUEUE_SZ;
     }
-    if ( (qptr>0) && digitalRead(PIN_DIR)) {
-      write_fifo_byte(queue[--qptr]);
+    if ( (wptr!=rptr) && digitalRead(PIN_DIR)) {
+      write_fifo_byte(queue[wptr]);
+      wptr = (wptr+1) % QUEUE_SZ;
     }
   }
 }
-
