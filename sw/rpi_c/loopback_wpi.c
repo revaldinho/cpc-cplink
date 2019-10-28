@@ -12,7 +12,7 @@
 #define PIN_SOB  22
 #define PIN_DOR  23
 #define PIN_WNR  24
-#define QUEUE_SZ  512
+#define QUEUE_SZ  8192
 int DATA[] = { PIN_D0, PIN_D1, PIN_D2, PIN_D3, PIN_D4, PIN_D5, PIN_D6, PIN_D7 };
 
 int queue[QUEUE_SZ];
