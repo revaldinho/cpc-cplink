@@ -43,9 +43,9 @@ def read_fifo_byte():
 
 if __name__ == "__main__":
     setup_pins()
-    write_queue = deque(maxlen=1024)
+    write_queue = deque(maxlen=8192)
     while True:
         if gpio.digitalRead(PIN_DOR):
             write_queue.append(read_fifo_byte())
         if len(write_queue)>0 and gpio.digitalRead(PIN_DIR):
-           write_fifo_byte(write_queue.pop())
+           write_fifo_byte(write_queue.popleft())
