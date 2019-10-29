@@ -1,7 +1,8 @@
 GET "BCPLLIB.B"
 
 MANIFEST $(
-    SZ=4096
+    SZ=4096      // num of ints
+    DBL_SZ=SZ<<1 // num of bytes
 $)
 
 LET fifo_in_bytes( rxptr, max) = VALOF $(
@@ -131,11 +132,11 @@ AND start() = VALOF $(
   writef("Setting up random data*n")
   setseed(scaledtime(1))
   FOR k=0 TO SZ-1 DO $(
-    tx!k := randno(256)-1      
+    tx!k := randno(31767)-1
     rx!k := 0
   $)
 
-  writef("Test 1: Sending and Receiving checking status byte by byte*n")
+  writef("Test 1: Sending and Receiving, checking status byte by byte*n")
   i:=0
   j:=0
   // Get pointer to absolute byte for transfer
@@ -143,13 +144,9 @@ AND start() = VALOF $(
   rxbyteptr := (@(rx!0))<<1
   writef("Sending/Receiving Data*n")
   resettime()
-  WHILE (i+j) < (SZ<<2) DO $(
-    IF i NE (SZ<<1) DO $(
-        i:= i+ (fifo_out_bytes( txbyteptr+i, SZ+SZ-i) )
-    $)
-    IF j NE (SZ<<1) DO $(
-        j:= j+ (fifo_in_bytes( rxbyteptr+j, SZ+SZ-j) )
-    $)
+  WHILE (i+j) < (DBL_SZ+DBL_SZ) DO $(
+    IF i NE DBL_SZ DO i:= i+ (fifo_out_bytes( txbyteptr+i, DBL_SZ-i) )
+    IF j NE DBL_SZ DO j:= j+ (fifo_in_bytes( rxbyteptr+j, DBL_SZ-j) )
   $)
   t := scaledtime(2)         // ask for time in 75th of sec.
 
@@ -167,34 +164,6 @@ AND start() = VALOF $(
       IF rx!i NE tx!i DO e:=e+1
   $) 
   TEST e=0 THEN writef("No errors*n") ELSE writef("%n errors detected*n",e)
-
-//  writef("Test 2: Sending and Receiving blind (rely on RPi only checking flags)*n")  
-//  i:=0
-//  j:=0
-//  writef("Sending Data (no flag checks)*n")
-//  resettime()
-//  WHILE i < SZ DO $(
-//    i:= i+ fifo_out_bytes_nc( @(tx!i), SZ-i)
-//  $)
-//  writef("Receiving Data (no flag checks)*n")  
-//  WHILE j < SZ DO $(
-//    j:= j+ fifo_in_bytes_nc( @(rx!j), SZ-j )
-//  $)
-//  t := scaledtime(2)         // ask for time in 75th of sec.
-//  writef("Bytes sent: %n*n", i)
-//  writef("Bytes received: %n*n", j)
-//  sec := (t)/75              // seconds
-//  frac := (t - sec*75)*4/3   // convert remainder to 100ths 
-//  writef("Time: %N.", sec)
-//  writez(frac,2)
-//  writes("s*n")
-//  writef("Checking Data...*n")
-//  FOR i=0 TO SZ-1 DO $(
-//      IF rx!i NE tx!i DO e:=e+1
-//  $) 
-//  TEST e=0 THEN writef("No errors*n") ELSE writef("%n errors detected*n",e)
-
-
 
   presskeytoexit()
   RESULTIS 0
