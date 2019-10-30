@@ -149,9 +149,7 @@ LET fifo_in_bytes_nc( rxptr, max) = VALOF $(
   inline #x1D            // DEC        e          
   inline #x20,#xFA       // JR         nz,top     ; if not loop again
                          // END:       ; 
-  inline #x7A            // LD         a,d        ; get max count
-  inline #x93            // SUB        e          ; subtract current count
-  inline #xDD,#x77,#x74  // LD         (ix+116),a ; write bytes rcvd ready to exit
+  inline #xDD,#x72,#x74  // LD         (ix+116),d ; write bytes rcvd ready to exit
   RESULTIS f                               
 $)
 
@@ -196,9 +194,7 @@ AND fifo_out_bytes_nc(txptr, max) = VALOF $(
   inline #x1D            // DEC        e          
   inline #x20,#xFA       // JR         nz,top     ; if not loop again
                          // END:       ; 
-  inline #x7A            // LD         a,d        ; get max count
-  inline #x93            // SUB        e          ; subtract current count
-  inline #xDD,#x77,#x74  // LD         (ix+116),a ; write bytes rcvd ready to exit
+  inline #xDD,#x72,#x74  // LD         (ix+116),d ; write bytes rcvd ready to exit
   RESULTIS f
 $)
 
