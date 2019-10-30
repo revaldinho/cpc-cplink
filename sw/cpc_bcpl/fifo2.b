@@ -10,18 +10,18 @@ LET fifo_in_bytes( rxptr, max) = VALOF $(
   LET f=0
 
   // Listing source: fifo_in_bytes.lst
-                         //  ; fifo_in_bytes
-                         //  ; 
-                         //  ; Read up to 255 bytes from the FIFO terminating when the
-                         //  ; FIFO signals EMTPY and returns the actual number read.
-                         //  ; 
-                         //  ; Entry:
-                         //  ; max IX+127/6 - Param 2: MAX bytes to write
-                         //  ; @tr IX+125/4 - Param 1: ptr to first BCPL word
-                         //  ; ret addr IX+123/2
-                         //  ; old IX IX+121/0
-                         //  ; vec ptr IX+119/8
-                         //  ; f IX+117/6 - local var init to 0 used to return result
+  //  ; fifo_in_bytes
+  //  ; 
+  //  ; Read up to 255 bytes from the FIFO terminating when the
+  //  ; FIFO signals EMTPY and returns the actual number read.
+  //  ; 
+  //  ; Entry:
+  //  ; max IX+127/6 - Param 2: MAX bytes to write
+  //  ; @tr IX+125/4 - Param 1: ptr to first BCPL word
+  //  ; ret addr IX+123/2
+  //  ; old IX IX+121/0
+  //  ; vec ptr IX+119/8
+  //  ; f IX+117/6 - local var init to 0 used to return result
   inline #xDD,#x66,#x7D  // LD         h,(ix+125) ; HL points to RX buffer
   inline #xDD,#x6E,#x7C  // LD         l,(ix+124) 
   inline #x11,#x00,#x00  // LD         de,00000   ; e = sent byte count
@@ -62,18 +62,18 @@ AND fifo_out_bytes(txptr, max) = VALOF $(
   LET f=0
 
   // Listing source: fifo_out_bytes.lst
-                         //  ; fifo_out_bytes
-                         //  ; 
-                         //  ; Write up to 255 bytes to the FIFO terminating when the
-                         //  ; FIFO signals FULL and returns the actual number written.
-                         //  ; 
-                         //  ; Entry
-                         //  ; max IX+127/6 Param 2: MAX bytes to write
-                         //  ; @tx IX+125/4 Param 1: pointer to first byte
-                         //  ; ret addr IX+123/2
-                         //  ; old IX IX+121/0
-                         //  ; vec ptr IX+119/8
-                         //  ; f IX+117/6 local var init to 0 used to return result
+  //  ; fifo_out_bytes
+  //  ; 
+  //  ; Write up to 255 bytes to the FIFO terminating when the
+  //  ; FIFO signals FULL and returns the actual number written.
+  //  ; 
+  //  ; Entry
+  //  ; max IX+127/6 Param 2: MAX bytes to write
+  //  ; @tx IX+125/4 Param 1: pointer to first byte
+  //  ; ret addr IX+123/2
+  //  ; old IX IX+121/0
+  //  ; vec ptr IX+119/8
+  //  ; f IX+117/6 local var init to 0 used to return result
   inline #xDD,#x66,#x7D  // LD         h,(ix+125) ; HL points to TX buffer
   inline #xDD,#x6E,#x7C  // LD         l,(ix+124) 
   inline #x11,#x00,#x00  // LD         de,00000   ; e = sent byte count
@@ -113,18 +113,18 @@ $)
 LET fifo_in_bytes_nc( rxptr, max) = VALOF $(
   LET f=0
   // Listing source: fifo_in_bytes_nc.lst
-                         //  ; fifo_in_bytes_nc
-                         //  ; 
-                         //  ; Read up to 255 bytes from the FIFO ignoring FIFO status
-                         //  ; flag states.
-                         //  ; .
-                         //  ; Entry:
-                         //  ; max IX+127/6 - Param 2: MAX bytes to write
-                         //  ; @rxptr IX+125/4 - Param 1: ptr to first byte in buffer
-                         //  ; ret addr IX+123/2
-                         //  ; old IX IX+121/0
-                         //  ; vec ptr IX+119/8
-                         //  ; f IX+117/6 - local var init to 0 used to return result
+  //  ; fifo_in_bytes_nc
+  //  ; 
+  //  ; Read up to 255 bytes from the FIFO ignoring FIFO status
+  //  ; flag states.
+  //  ; .
+  //  ; Entry:
+  //  ; max IX+127/6 - Param 2: MAX bytes to write
+  //  ; @rxptr IX+125/4 - Param 1: ptr to first byte in buffer
+  //  ; ret addr IX+123/2
+  //  ; old IX IX+121/0
+  //  ; vec ptr IX+119/8
+  //  ; f IX+117/6 - local var init to 0 used to return result
   inline #xDD,#x66,#x7D  // LD         h,(ix+125) ; HL points to RX buffer
   inline #xDD,#x6E,#x7C  // LD         l,(ix+124) 
   inline #x11,#x00,#x00  // LD         de,00000   ; e = sent byte count
@@ -158,18 +158,18 @@ AND fifo_out_bytes_nc(txptr, max) = VALOF $(
   LET f=0
 
   // Listing source: fifo_out_bytes_nc.lst
-                         //  ; fifo_out_bytes_nc
-                         //  ; 
-                         //  ; Write up to 255 bytes from the FIFO ignoring FIFO status
-                         //  ; flag states.
-                         //  ; .
-                         //  ; Entry:
-                         //  ; max IX+127/6 - Param 2: MAX bytes to write
-                         //  ; @txptr IX+125/4 - Param 1: ptr to first byte
-                         //  ; ret addr IX+123/2
-                         //  ; old IX IX+121/0
-                         //  ; vec ptr IX+119/8
-                         //  ; f IX+117/6 - local var init to 0 used to return result
+  //  ; fifo_out_bytes_nc
+  //  ; 
+  //  ; Write up to 255 bytes from the FIFO ignoring FIFO status
+  //  ; flag states.
+  //  ; .
+  //  ; Entry:
+  //  ; max IX+127/6 - Param 2: MAX bytes to write
+  //  ; @txptr IX+125/4 - Param 1: ptr to first byte
+  //  ; ret addr IX+123/2
+  //  ; old IX IX+121/0
+  //  ; vec ptr IX+119/8
+  //  ; f IX+117/6 - local var init to 0 used to return result
   inline #xDD,#x66,#x7D  // LD         h,(ix+125) ; HL points to RX buffer
   inline #xDD,#x6E,#x7C  // LD         l,(ix+124) 
   inline #x11,#x00,#x00  // LD         de,00000   ; e = sent byte count
