@@ -24,7 +24,7 @@ A first prototype has been successfully build and tested, in which the logic is 
 
 A second version, with all logic implemented in standard 74 series gates, has been designed and is now awaiting assembly and testing.
 
-For more detailed information refer to the [project wiki pages](https://github.com/revaldinho/cpc-cplink/wiki/CPC-CPLink).
+For more detailed information refer to the [project wiki pages](https://github.com/revaldinho/cpc-cplink/wiki/Home).
 
 ## License
 
