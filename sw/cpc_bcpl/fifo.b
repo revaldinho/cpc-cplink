@@ -1,7 +1,3 @@
-// CPC-Cplink FIFO Test Program
-//
-// (C) 2019 Revaldinho
-
 GET "BCPLLIB.B"
 GET "FIFOLIB.B"
 
@@ -58,21 +54,19 @@ AND start() = VALOF $(
   rxbyteptr := (@(rx!0))<<1
 
   writef("*nTest 1: Send/Receive 1 byte at a time, check FIFO status per byte*n")
-  i:=0
-  j:=0
+  i,j:=0,0
   resettime()
   WHILE (i+j) < QUAD_SZ DO $(
     IF (i NE DBL_SZ) DO i:= i+ fifo_out_byte(tx%i) // note byte reference for transmission
     IF (j NE DBL_SZ) DO j:= j+ fifo_in_byte(rxbyteptr+j)
   $)
   t := scaledtime(2)         // ask for time in 75th of sec.
-
+  
   show_stats(i,j,t)
   check_data( tx, rx, SZ)
-
+ 
   writef("*nTest 2: Send/Receive multiple bytes, check FIFO status per byte*n")
-  i:=0
-  j:=0
+  i,j:=0,0
   resettime()
   WHILE (i+j) < (QUAD_SZ) DO $(
     IF i NE DBL_SZ DO i:= i+ (fifo1_out_bytes( txbyteptr+i, DBL_SZ-i) )
@@ -84,8 +78,7 @@ AND start() = VALOF $(
   check_data( tx, rx, SZ)
 
   writef("*nTest 3: Send/Receive 255 byte blocks, no status checks*n")
-  i:=0
-  j:=0
+  i,j:=0,0
   resettime()
   WHILE i < DBL_SZ DO i:= i+ (fifo2_out_bytes_nc( txbyteptr+i, DBL_SZ-i) )
   WHILE j < DBL_SZ DO j:= j+ (fifo2_in_bytes_nc( rxbyteptr+j, DBL_SZ-j) )
@@ -95,8 +88,7 @@ AND start() = VALOF $(
   check_data( tx, rx, SZ)
 
   writef("*nTest 4: Send/Receive 255 byte blocks, no status checks, 4 byte unrolled loops*n")
-  i:=0
-  j:=0
+  i,j:=0,0
   resettime()
   WHILE i < DBL_SZ DO i:= i+ (fifo3_out_bytes_nc( txbyteptr+i, DBL_SZ-i) )
   WHILE j < DBL_SZ DO j:= j+ (fifo3_in_bytes_nc( rxbyteptr+j, DBL_SZ-j) )
