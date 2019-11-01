@@ -47,12 +47,22 @@ def convert_file(file):
     object = list()
     asm = list ()
     comment = list ()
-    
+
     for l in file:
-        if len(l.strip())>0:
+        if len(l.strip())>0 and not l.startswith('#'):
             address.append(int(l[0:4],16))
-            object.append([int(x,16) for x in (l[7:20]).split()])
-            parts  = l[20:].split(';') + ['','']
+
+            line_obj  = []
+            label = ''
+            for x in (l[5:18]).split():
+                if not x.endswith(':'):
+                    line_obj.append(int(x.strip(),16))
+                else:
+                    label = x
+            object.append(line_obj)
+
+            parts  = l[18:].split(';') + ['','']
+            parts[0] = ' '.join( [label,parts[0]])
             if not nocode:
                 asm.append(parts[0].strip())
                 if not nocomment:

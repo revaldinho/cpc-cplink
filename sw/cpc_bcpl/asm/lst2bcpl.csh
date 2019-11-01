@@ -28,10 +28,10 @@ foreach f ( $files[*] )
         echo "AND " $name' (ptr, max) = VALOF $(' >> $libname
     endif
     echo '  LET f=0' >> $libname
-    python ../../util/lst2inline.py -f $f  >> $libname
+    cat ${name}.b >> $libname
     echo "  RESULTIS f" >> $libname
     echo '$)'     >> $libname
     echo ''     >> $libname    
 end
 
-mv fifolib.b ..
+##mv fifolib.b ..
