@@ -64,7 +64,7 @@ int read_fifo_byte() {
 }
 
 void main( void ) {
-  wiringPiSetupGpio () ;
+  setup_pins() ;
   for (;;) {
     if (digitalRead(PIN_DOR)) {
       queue[rptr] = read_fifo_byte();
