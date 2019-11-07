@@ -15,7 +15,7 @@ ALL_B   ?= $(patsubst %.asm,%.b,$(ALLSRCS))
 
 
 %.b : %.lst
-	python ../../util/lst2inline.py -f $<  > $@
+	python ../../util/lst2inline.py -f $<  -b --nocode -g 12 > $@
 
 fifolib.b:  ${ALL_LST} ${ALL_B}
 	/bin/tcsh  lst2bcpl.csh
