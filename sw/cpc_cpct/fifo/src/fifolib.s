@@ -59,7 +59,7 @@ _fifo_in_byte::
         in   a,(#0x80)         	; get byte
 	ld   (hl),a
         ld   a,#1               ; success=1
-fib_end:   
+fib_end:
         ld   l,a
         ret
 
@@ -83,8 +83,8 @@ _fifo_out_byte::
         jr   z,fob_end          ; go to end if no data available
         dec c			; point to data reg
         out (c), l              ; write the byte
-        ld   a, #0x1           	; success        
-fob_end:   
+        ld   a, #0x1           	; success
+fob_end:
         ld   l,a
         ret
 
@@ -93,7 +93,7 @@ fob_end:
 	;; --------------------------------------------------------
         ;; Service routine to extract parameters from stack
         ;; and set up common start conditions for the fifo byte transfer
-        ;; routines      
+        ;; routines
         ;;
         ;; Entry
 	;;  (SP+6) = Num bytes
@@ -133,7 +133,7 @@ fep_end0:
         ld   a,#0
         pop  ix
         ret
-         
+
 	;; --------------------------------------------------------
 	;; fifo_in_bytes
 	;; --------------------------------------------------------
@@ -157,7 +157,7 @@ _fifo_in_bytes::
         call fifo_ext_param     ; get buffer pointer in hl, number of bytes in a
         and  #0xFF              ; check if A is zero
         jr   z, fibs_end
-        inc  c                  ; point to status register first        
+        inc  c                  ; point to status register first
         rra                     ; check if count is odd in which case start at top1
         jr   c, fibs_top1       ; else start at top2 to progress in twos
 fibs_top2:
@@ -169,9 +169,9 @@ fibs_top2:
         inc  b            	; restore b
         inc  c            	; point to status reg for next check
         dec  e            	; update counter (but no need to check for zero here)
-fibs_top1:                	
+fibs_top1:
         in   a,(c)        	; get dor status flag
-        rra               	
+        rra
         jr   nc,fibs_end  	; go to end if no data available
         dec  c            	; point to data reg
         ini               	; (hl)<-in(bc), hl++, b--
@@ -179,7 +179,7 @@ fibs_top1:
         inc  c            	; point to status reg for next check
         dec  e            	; decrement counter and check if done
         jr   nz,fibs_top2 	; if not loop again
-fibs_end:                 	
+fibs_end:
         ld   a,d          	; restore max count
         sub  e            	; subtract remaining bytes
         ld   l, a
@@ -208,21 +208,21 @@ _fifo_out_bytes::
         call fifo_ext_param     ; get buffer pointer in hl, number of bytes in a
         and  #0xFF
         jr   z, fobs_end
-        inc  c                  ; point to status register first        
+        inc  c                  ; point to status register first
         rra                     ; check if count is odd in which case start at top1
         jr   c, fobs_top1       ; else start at top2 to progress in twos
 fobs_top2:
         in   a,(c)              ; get dir status flag
-        and  #0x2               
+        and  #0x2
         jr   z,fobs_end  	; go to end if no data available
         dec  c            	; point to data reg
         inc  b                  ; pre-incr B
         outi               	; b-- ; OUT(BC) <- (hl) ; hl++
         inc  c            	; point to status reg for next check
         dec  e            	; update counter (but no need to check for zero here)
-fobs_top1:                	
+fobs_top1:
         in   a,(c)        	; get dir status flag
-        and  #0x2               	
+        and  #0x2
         jr   z,fobs_end  	; go to end if no data available
         dec  c            	; point to data reg
         inc  b                  ; pre-incr B
@@ -230,7 +230,7 @@ fobs_top1:
         inc  c            	; point to status reg for next check
         dec  e            	; decrement counter and check if done
         jr   nz,fobs_top2 	; if not loop again
-fobs_end:                 	
+fobs_end:
         ld   a,d          	; restore max count
         sub  e            	; subtract remaining bytes
         ld   l, a
@@ -258,16 +258,22 @@ _fifo_in_nc_bytes::
         call fifo_ext_param     ; get buffer pointer in hl, number of bytes in a
         and  #0xFF
         jr   z, finbs_end
-finbs_top1:                	
+        rra                     ; check if count is odd in which case start at top1
+        jr   c, finbs_top1      ; else start at top2 to progress in twos
+finbs_top2:
+        ini               	; (hl)<-in(bc), hl++, b--
+        inc  b            	; restore b
+        dec  e            	; decrement counter but no need to check
+finbs_top1:
         ini               	; (hl)<-in(bc), hl++, b--
         inc  b            	; restore b
         dec  e            	; decrement counter and check if done
-        jr   nz,finbs_top1 	; if not loop again
-finbs_end:                 	
+        jr   nz,finbs_top2 	; if not loop again
+finbs_end:
         ld   a,d          	; restore max count
         sub  e            	; subtract remaining bytes
         ld   l, a
-        ret        
+        ret
 
 	;; --------------------------------------------------------
 	;; fifo_out_nc_bytes
@@ -291,14 +297,19 @@ _fifo_out_nc_bytes::
         call fifo_ext_param     ; get buffer pointer in hl, number of bytes in a
         and  #0xFF
         jr   z, fonbs_end
+        rra                     ; check if count is odd in which case start at top1
+        jr   c, fonbs_top1      ; else start at top2 to progress in twos
+fonbs_top2:
+        inc  b            	; pre-inc  b
+        outi               	; b-- ; OUT(BC)<-(HL) ; hl++
+        dec e
 fonbs_top1:
         inc  b            	; pre-inc  b
         outi               	; b-- ; OUT(BC)<-(HL) ; hl++
         dec  e            	; decrement counter and check if done
-        jr   nz,fonbs_top1 	; if not loop again
-fonbs_end:                 	
-        ld   a,d          	; restore max count
+        jr   nz,fonbs_top2 	; if not loop again
+fonbs_end:
+        ld   a,d                ; restore max count
         sub  e            	; subtract remaining bytes
         ld   l, a
-        ret        
-        
+        ret
