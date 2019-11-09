@@ -32,10 +32,11 @@ void show_stats(uint16_t dout,uint16_t din, uint32_t t);
 void check_data(uint8_t *v1, uint8_t *v2, uint16_t n);
 
 void main ( void ) {
-  uint16_t i,j,k;
+  uint16_t i,j;
   uint32_t t ;
-  uint8_t *tx_p = MEMPOOL ; 
-  uint8_t *rx_p = MEMPOOL+SZ;
+  uint8_t *tx_p = (uint8_t *)MEMPOOL ; 
+  uint8_t *rx_p = (uint8_t *)MEMPOOL+SZ;
+  uint8_t count ;
   
   scr_set_mode(2);
 
@@ -44,7 +45,7 @@ void main ( void ) {
 
   printf("Set up random data\r\n");
   srand(kl_time_please());
-  for (k=0; k<SZ; k++) {
+  for (i=0; i<SZ; i++) {
     *(tx_p+i) = rand() & 0xFFFF ;
     *(rx_p+i) = 0;
   }
@@ -64,6 +65,21 @@ void main ( void ) {
   show_stats(i,j,t);
   check_data( tx_p, rx_p, SZ);
 
+  puts("\nTest 2: Send/Receive multiple bytes, check FIFO status per byte\r");
+  kl_time_set(0);
+  for ( i=0, j=0; (i+j) < DBL_SZ; ) {
+    if (i < SZ) {
+      i+=fifo1_out_bytes( tx_p+i, SZ-i);
+    }
+    if (j < SZ) {
+      j += fifo1_in_bytes( rx_p+j, SZ-j);
+    }
+  }
+  t = kl_time_please();
+
+  show_stats(i,j,t);
+  check_data( tx_p, rx_p, SZ);
+  
   puts("Press any key to exit\r");
   km_wait_char();
 }
@@ -71,7 +87,7 @@ void main ( void ) {
 void fifo_flush() {
   int i;
   uint8_t bufbyte;
-  for ( i=0;  (i<8192) & (fifo_in_byte(&bufbyte)!=0); i++ ) { }
+  for ( i=0;  (i<16384) & (fifo_in_byte(&bufbyte)!=0); i++ ) { }
   if ( i>0 ) printf("Flushed %d bytes from input buffer\r\n", i);
 }
 
@@ -80,13 +96,14 @@ void show_stats(uint16_t dout,uint16_t din, uint32_t t){
   uint16_t frac = (uint16_t)((t % 300)/3);
   printf("Bytes sent: %d\r\n", dout);
   printf("Bytes received: %d\r\n", din);
-  printf("Time: %d.%d s\r\n", sec, frac);
+  printf("Time: %d.%02d s\r\n", sec, frac);
 }
 
 void check_data(uint8_t *v1, uint8_t *v2, uint16_t n) {
   uint16_t i,e=0;
   printf("Checking Data...");
   for (i=0;  i< n; i++) {
+    //printf ( "Expected %4x Actual %4x\r\n", *(v1+i), *(v2+i));
     e += ( *(v1+i) != *(v2+i))? 1:0;
   }
   if (e==0) {
