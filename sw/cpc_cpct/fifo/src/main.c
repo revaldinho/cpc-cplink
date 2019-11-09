@@ -25,7 +25,7 @@
 #define DBL_SZ  SZ<<1  // double num of bytes
 
 // Manage memory directly
-#define MEMPOOL 0x6000
+#define MEMPOOL 0x4000
 
 void fifo_flush();
 void show_stats(uint16_t dout,uint16_t din, uint32_t t);
@@ -69,17 +69,32 @@ void main ( void ) {
   kl_time_set(0);
   for ( i=0, j=0; (i+j) < DBL_SZ; ) {
     if (i < SZ) {
-      i+=fifo1_out_bytes( tx_p+i, SZ-i);
+      i+=fifo_out_bytes( tx_p+i, SZ-i);
     }
     if (j < SZ) {
-      j += fifo1_in_bytes( rx_p+j, SZ-j);
+      j += fifo_in_bytes( rx_p+j, SZ-j);
     }
   }
   t = kl_time_please();
 
   show_stats(i,j,t);
   check_data( tx_p, rx_p, SZ);
-  
+
+  puts("\nTest 3: Send/Receive 255 byte blocks, no status check\r");
+  kl_time_set(0);
+  for ( i=0, j=0; (i+j) < DBL_SZ; ) {
+    while ( i< SZ ) {
+      i+=fifo_out_nc_bytes( tx_p+i, SZ-i);
+    }
+    while (j < SZ) {
+      j += fifo_in_nc_bytes( rx_p+j, SZ-j);
+    }
+  }
+  t = kl_time_please();
+
+  show_stats(i,j,t);
+  check_data( tx_p, rx_p, SZ);
+
   puts("Press any key to exit\r");
   km_wait_char();
 }

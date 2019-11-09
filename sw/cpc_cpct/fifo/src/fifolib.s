@@ -89,6 +89,52 @@ fob_end:
         ret
 
 	;; --------------------------------------------------------
+	;; fifo_ext_param
+	;; --------------------------------------------------------
+        ;; Service routine to extract parameters from stack
+        ;; and set up common start conditions for the fifo byte transfer
+        ;; routines      
+        ;;
+        ;; Entry
+	;;  (SP+6) = Num bytes
+	;;  (SP+4) = RX buffer
+	;;  (SP+2) = Ext Ret addr
+        ;;  (SP)   = Immediate ret addr
+	;; Exit:
+        ;;  bc     = 0xfd80 (point to the data register)
+	;;  hl     = pointer to num bytes
+	;;   a     = num of bytes to read= 0-255
+        ;;   d     = num of bytes to read= 0-255 (duplicated)
+        ;;   e     = num of bytes to read= 0-255 (duplicated)
+	;;  all other register preserved
+fifo_ext_param:
+        push ix                 ; save IX (pushing every thing 2 bytes deeper)
+        ld   ix,#6
+        add  ix,sp
+        ld   bc, #0xfd80        ; init FIFO register pointer
+        ld   l,0(ix)
+        ld   h,1(ix)
+        ld   a,3(ix)            ; get high byte of count
+        and  #0xff              ; check if non-zero
+        jr   z,fep_get_lowb     ; get low byte if zero
+        rla                     ; check sign bit
+        jr   c,fep_end0         ; exit (with 0) if sign bit is set
+        ld   a,#0xff            ; else, +ve, non-zero hi byte so set size to 255 max
+        jr   fep_end
+fep_get_lowb:
+        ld   a,2(ix)            ; get low byte of max bytes param
+fep_end:
+        ld   d,a
+        ld   e,a
+        pop  ix
+        ret
+fep_end0:
+        ld   de, #0x0000        ; no bytes to read
+        ld   a,#0
+        pop  ix
+        ret
+         
+	;; --------------------------------------------------------
 	;; fifo_in_bytes
 	;; --------------------------------------------------------
 	;;
@@ -107,31 +153,13 @@ fob_end:
 	;;  RX Buffer holds bytes read
 	;;  IY,IX preserved
 	;;  all other register corrupted
-_fifo1_in_bytes::
-        push ix
-        ld   ix,#4
-        add  ix,sp
-        ld   l,0(ix)
-        ld   h,1(ix)
-        ld   de,#00000          ; zero rcv'd byte count
-        ld   bc,#0xfd81         ; bc point to status reg first
-        ld   a,3(ix)            ; get high byte of count
-        and  #0xff              ; check if non-zero
-        jr   z,fibs_get_lowb    ; get low byte if zero
-        rla                     ; check sign bit
-        jr   c,fibs_end         ; exit if sign bit is set
-        ld   a,#0xff            ; else, +ve, non-zero hi byte so set size to 255 max
-        jr   fibs_top
-fibs_get_lowb:
-        ld   a,2(ix)            ; get low byte of max bytes param
-        and  #0xff              ; check for zero and exit early
-        jr   z,fibs_end
-fibs_top:
-        ld   d, a               ; copy max bytes to d to preserve
-        ld   e, a               ; copy max bytes to e to count down
+_fifo_in_bytes::
+        call fifo_ext_param     ; get buffer pointer in hl, number of bytes in a
+        and  #0xFF              ; check if A is zero
+        jr   z, fibs_end
+        inc  c                  ; point to status register first        
         rra                     ; check if count is odd in which case start at top1
         jr   c, fibs_top1       ; else start at top2 to progress in twos
-
 fibs_top2:
         in   a,(c)              ; get dor status flag
         rra
@@ -155,45 +183,7 @@ fibs_end:
         ld   a,d          	; restore max count
         sub  e            	; subtract remaining bytes
         ld   l, a
-        pop ix
         ret
-
-;; ------------------------------------------------------------------------
-;; Alternatve implementation unfinished
-;;fibs_top:
-;;        ld   c, a               ; copy max bytes to c to preserve
-;;        ld   b, a               ; copy max bytes to b to count down
-;;        ld   d, #0xfd           ; save upper byte of port addr in d
-;;        rra                     ; check if count is odd in which case start at top1
-;;        jr   c, fibs_top1       ; else start at top2 to progress in twos
-;;
-;;fibs_top2:
-;;        ld   a,d                ; get upper byte of port addr in a
-;;        in   a,(#0x81)          ; get dor status flag
-;;        rra
-;;        jr   nc,fibs_end  	; go to end if no data available
-;;        ld   a,d
-;;        in   a,(#0x80)
-;;        ld   (hl),a
-;;        inc  hl
-;;        dec  b            	; update counter (but no need to check for zero here)
-;;fibs_top1:
-;;        ld   a, d
-;;        in   a,(#0x81)        	; get dor status flag
-;;        rra               	
-;;        jr   nc,fibs_end  	; go to end if no data available
-;;        ld   a,d
-;;        in   a,(#0x80)
-;;        ld   (hl),a
-;;        inc  hl
-;;        djnz fibs_top2 	        ; if not loop again
-;;fibs_end:                 	
-;;        ld   a,c          	; restore max count
-;;        sub  b            	; subtract remaining bytes
-;;        ld   l, a
-;;        pop ix
-;;        ret
-;; ------------------------------------------------------------------------
 
 	;; --------------------------------------------------------
 	;; fifo_out_bytes
@@ -214,33 +204,13 @@ fibs_end:
 	;;  RX Buffer holds bytes read
 	;;  IY,IX preserved
 	;;  all other register corrupted
-
-_fifo1_out_bytes::
-        push ix
-        ld   ix,#4
-        add  ix,sp
-        ld   l,0(ix)            ; HL points to buffer
-        ld   h,1(ix)
-        ld   de,#00000          ; zero sent byte count
-        ld   bc,#0xfd81         ; bc point to status reg first
-        ld   a,3(ix)            ; get high byte of count
-        and  #0xff              ; check if non-zero
-        jr   z,fobs_get_lowb    ; get low byte if zero
-        rla                     ; check sign bit
-        jr   c,fobs_end         ; exit if sign bit is set
-        ld   a,#0xff            ; else, +ve, non-zero hi byte so set size to 255 max
-        jr   fobs_top
-fobs_get_lowb:
-        ld   a,2(ix)            ; get low byte of max bytes param
-        and  #0xff              ; check for zero and exit early
-        jr   z,fobs_end
-
-fobs_top:
-        ld   d, a               ; copy max bytes to d to preserve
-        ld   e, a               ; copy max bytes to e to count down
+_fifo_out_bytes::
+        call fifo_ext_param     ; get buffer pointer in hl, number of bytes in a
+        and  #0xFF
+        jr   z, fobs_end
+        inc  c                  ; point to status register first        
         rra                     ; check if count is odd in which case start at top1
         jr   c, fobs_top1       ; else start at top2 to progress in twos
-
 fobs_top2:
         in   a,(c)              ; get dir status flag
         and  #0x2               
@@ -264,5 +234,71 @@ fobs_end:
         ld   a,d          	; restore max count
         sub  e            	; subtract remaining bytes
         ld   l, a
-        pop ix
         ret
+
+	;; --------------------------------------------------------
+	;; fifo_in_nc_bytes
+	;; --------------------------------------------------------
+	;;
+	;; Read up to 255 bytes from the FIFO without looking at the
+	;; status flags and terminating only when all bytes are trans-
+        ;; -ferred. Routine will return early if a negative 16b number
+        ;; or 0 is passed.
+	;;
+	;; Entry:
+	;;  (SP+4) = Num bytes
+	;;  (SP+2) = RX buffer
+	;;  (SP)   = Ret addr
+	;; Exit:
+	;;  hl     = number of bytes read
+	;;  RX Buffer holds bytes read
+	;;  IY,IX preserved
+	;;  all other register corrupted
+_fifo_in_nc_bytes::
+        call fifo_ext_param     ; get buffer pointer in hl, number of bytes in a
+        and  #0xFF
+        jr   z, finbs_end
+finbs_top1:                	
+        ini               	; (hl)<-in(bc), hl++, b--
+        inc  b            	; restore b
+        dec  e            	; decrement counter and check if done
+        jr   nz,finbs_top1 	; if not loop again
+finbs_end:                 	
+        ld   a,d          	; restore max count
+        sub  e            	; subtract remaining bytes
+        ld   l, a
+        ret        
+
+	;; --------------------------------------------------------
+	;; fifo_out_nc_bytes
+	;; --------------------------------------------------------
+	;;
+	;; Write up to 255 bytes from the FIFO without looking at the
+	;; status flags and terminating only when all bytes are trans-
+        ;; -ferred. Routine will return early if a negative 16b number
+        ;; or 0 is passed.
+	;;
+	;; Entry:
+	;;  (SP+4) = Num bytes
+	;;  (SP+2) = TX buffer
+	;;  (SP)   = Ret addr
+	;; Exit:
+	;;  hl     = number of bytes read
+	;;  RX Buffer holds bytes read
+	;;  IY,IX preserved
+	;;  all other register corrupted
+_fifo_out_nc_bytes::
+        call fifo_ext_param     ; get buffer pointer in hl, number of bytes in a
+        and  #0xFF
+        jr   z, fonbs_end
+fonbs_top1:
+        inc  b            	; pre-inc  b
+        outi               	; b-- ; OUT(BC)<-(HL) ; hl++
+        dec  e            	; decrement counter and check if done
+        jr   nz,fonbs_top1 	; if not loop again
+fonbs_end:                 	
+        ld   a,d          	; restore max count
+        sub  e            	; subtract remaining bytes
+        ld   l, a
+        ret        
+        
