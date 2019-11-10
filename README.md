@@ -58,11 +58,6 @@ Here is a list of the key features:
 
 The project has been fully built and tested.
 
-An initial prototype (v0.2) was built using a Xilinx XC9536 CPLD to implement all logic. This is fully functional, but the CPLD is sadly now obsolete.
-
-A second version of the card with all logic implemented in standard 74 series gates has been built and tested now. This is fully working and totally
-software compatible with the original prototype.
-
 For more detailed information refer to the [project wiki pages](https://github.com/revaldinho/cpc-cplink/wiki/Home).
 
 ## License
