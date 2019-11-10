@@ -9,7 +9,7 @@ A co-processor link card for Amstrad CPC Computers
 ### Outline 
 This is a card which allows you to connect an external co-processor, like a RaspberryPi,  directly to any Amstrad CPC Computer. 
 
-The card provides an easy to use parallel interface between the processors using FIFO hardware and a simple message passing software protocol. Voltage level shifting components are included so that both 3V3 and 5V co-processors can be connected directly. Most likely the co-processor will be a RaspberryPi, but the First-In First-Out (FIFO) interface is suitable for other processors and systems too including Arduinos, Teensy and PIC MCUs.
+The card provides an easy to use parallel interface between the processors using First-In First-Out (FIFO) hardware and a simple message passing software protocol. Voltage level shifting components are included so that both 3V3 and 5V co-processors can be connected directly. Most likely the co-processor will be a RaspberryPi, but the interface is suitable for other processors and systems including Arduinos, Teensy and PIC MCUs.
 
 FIFO based operation ensures all key timing requirements are handled by the board, so that
 any co-processor can be easily interfaced without needing to run bare-metal, timing critical code.
