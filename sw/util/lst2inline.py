@@ -49,18 +49,18 @@ def convert_file(file):
     comment = list ()
 
     for l in file:
-        if len(l.strip())>0 and not l.startswith('#'):
+        if len(l.strip())>0 and not l.startswith('#') :
             address.append(int(l[0:4],16))
-
             line_obj  = []
             label = ''
             for x in (l[5:18]).split():
-                if not x.endswith(':'):
+                if  (x.lstrip()).startswith(';'):
+                    break
+                if not x.endswith(':') :
                     line_obj.append(int(x.strip(),16))
                 else:
                     label = x
             object.append(line_obj)
-
             parts  = l[18:].split(';') + ['','']
             parts[0] = ' '.join( [label,parts[0]])
             if not nocode:

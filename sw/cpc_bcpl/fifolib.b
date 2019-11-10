@@ -14,10 +14,11 @@ AND  fifo1_in_bytes (ptr, max) = VALOF $(
   // Listing source: fifo1_in_bytes.lst
 
   INLINE #xDD,#x66,#x7D,#xDD,#x6E,#x7C,#x11,#x00,#x00,#x01,#x81,#xFD
-  INLINE #xDD,#x7E,#x7F,#xE6,#xFF,#x28,#x08,#x17,#x38,#x1B,#x16,#xFF
-  INLINE #x5A,#x18,#x09,#xDD,#x7E,#x7E,#xE6,#xFF,#x28,#x0F,#x57,#x5F
-  INLINE #xED,#x78,#x1F,#x30,#x08,#x0D,#xED,#xA2,#x04,#x0C,#x1D,#x20
-  INLINE #xF3,#x7A,#x93,#xDD,#x77,#x74
+  INLINE #xDD,#x7E,#x7F,#xE6,#xFF,#x28,#x08,#x17,#x38,#x29,#x16,#xFF
+  INLINE #x5A,#x18,#x17,#xDD,#x7E,#x7E,#xE6,#xFF,#x28,#x1D,#x57,#x5F
+  INLINE #x1F,#x38,#x0B,#xED,#x78,#x1F,#x30,#x13,#x0D,#xED,#xA2,#x04
+  INLINE #x0C,#x1D,#xED,#x78,#x1F,#x30,#x08,#x0D,#xED,#xA2,#x04,#x0C
+  INLINE #x1D,#x20,#xE8,#x7A,#x93,#xDD,#x77,#x74
   RESULTIS f
 $)
 
@@ -26,10 +27,11 @@ AND  fifo1_out_bytes (ptr, max) = VALOF $(
   // Listing source: fifo1_out_bytes.lst
 
   INLINE #xDD,#x66,#x7D,#xDD,#x6E,#x7C,#x11,#x00,#x00,#x01,#x81,#xFD
-  INLINE #xDD,#x7E,#x7F,#xE6,#xFF,#x28,#x08,#x17,#x38,#x1C,#x16,#xFF
-  INLINE #x5A,#x18,#x09,#xDD,#x7E,#x7E,#xE6,#xFF,#x28,#x10,#x57,#x5F
-  INLINE #xED,#x78,#xE6,#x02,#x28,#x08,#x0D,#x04,#xED,#xA3,#x0C,#x1D
-  INLINE #x20,#xF2,#x7A,#x93,#xDD,#x77,#x74
+  INLINE #xDD,#x7E,#x7F,#xE6,#xFF,#x28,#x08,#x17,#x38,#x2A,#x16,#xFF
+  INLINE #x5A,#x18,#x17,#xDD,#x7E,#x7E,#xE6,#xFF,#x28,#x1E,#x57,#x5F
+  INLINE #x1F,#x38,#x0B,#xED,#x78,#x1F,#x30,#x14,#x0D,#x04,#xED,#xA3
+  INLINE #x0C,#x1D,#xED,#x78,#xE6,#x02,#x28,#x08,#x0D,#x04,#xED,#xA3
+  INLINE #x0C,#x1D,#x20,#xE7,#x7A,#x93,#xDD,#x77,#x74
   RESULTIS f
 $)
 
@@ -38,9 +40,10 @@ AND  fifo2_in_bytes_nc (ptr, max) = VALOF $(
   // Listing source: fifo2_in_bytes_nc.lst
 
   INLINE #xDD,#x66,#x7D,#xDD,#x6E,#x7C,#x11,#x00,#x00,#x01,#x80,#xFD
-  INLINE #xDD,#x7E,#x7F,#xE6,#xFF,#x28,#x08,#x17,#x38,#x14,#x16,#xFF
-  INLINE #x5A,#x18,#x09,#xDD,#x7E,#x7E,#xE6,#xFF,#x28,#x08,#x57,#x5F
-  INLINE #xED,#xA2,#x04,#x1D,#x20,#xFA,#xDD,#x72,#x74
+  INLINE #xDD,#x7E,#x7F,#xE6,#xFF,#x28,#x08,#x17,#x38,#x1B,#x16,#xFF
+  INLINE #x5A,#x18,#x10,#xDD,#x7E,#x7E,#xE6,#xFF,#x28,#x0F,#x57,#x5F
+  INLINE #x1F,#x38,#x04,#xED,#xA2,#x04,#x1D,#xED,#xA2,#x04,#x1D,#x20
+  INLINE #xF6,#xDD,#x72,#x74
   RESULTIS f
 $)
 
@@ -49,9 +52,10 @@ AND  fifo2_out_bytes_nc (ptr, max) = VALOF $(
   // Listing source: fifo2_out_bytes_nc.lst
 
   INLINE #xDD,#x66,#x7D,#xDD,#x6E,#x7C,#x11,#x00,#x00,#x01,#x80,#xFD
-  INLINE #xDD,#x7E,#x7F,#xE6,#xFF,#x28,#x08,#x17,#x38,#x14,#x16,#xFF
-  INLINE #x5A,#x18,#x09,#xDD,#x7E,#x7E,#xE6,#xFF,#x28,#x08,#x57,#x5F
-  INLINE #x04,#xED,#xA3,#x1D,#x20,#xFA,#xDD,#x72,#x74
+  INLINE #xDD,#x7E,#x7F,#xE6,#xFF,#x28,#x08,#x17,#x38,#x1B,#x16,#xFF
+  INLINE #x5A,#x18,#x10,#xDD,#x7E,#x7E,#xE6,#xFF,#x28,#x0F,#x57,#x5F
+  INLINE #x1F,#x38,#x04,#x04,#xED,#xA3,#x1D,#x04,#xED,#xA3,#x1D,#x20
+  INLINE #xF6,#xDD,#x72,#x74
   RESULTIS f
 $)
 
