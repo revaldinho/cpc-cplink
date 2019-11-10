@@ -4,7 +4,7 @@
 
 A co-processor link card for Amstrad CPC Computers
 
-![Board Front Image](https://raw.githubusercontent.com/revaldinho/cpc-cplink/master/doc/CPCCPLINKFront.jpg)
+![Board Front Image](https://raw.githubusercontent.com/revaldinho/cpc-cplink/master/doc/V1.0_assembled_front.jpg)
 
 ### Outline 
 This is a card which allows you to connect an external co-processor, like a RaspberryPi,  directly to any Amstrad CPC Computer. 
