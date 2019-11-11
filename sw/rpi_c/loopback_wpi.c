@@ -1,4 +1,8 @@
 #include <wiringPi.h>
+
+
+#ifndef PI1 
+// BCM Pin numbering
 #define PIN_D7   11
 #define PIN_D6   10
 #define PIN_D5    9
@@ -12,6 +16,24 @@
 #define PIN_SOB  22
 #define PIN_DOR  23
 #define PIN_WNR  24
+#else
+// Wiring Pi pin numbering for older PI1
+#define PIN_D7   11
+#define PIN_D6   10
+#define PIN_D5    9
+#define PIN_D4    8
+#define PIN_D3    7
+#define PIN_D2    4
+#define PIN_D1    1
+#define PIN_D0    0
+#define PIN_SI   18
+#define PIN_DIR  17
+#define PIN_SOB  22
+#define PIN_DOR  23
+#define PIN_WNR  24
+#endif
+
+
 #define QUEUE_SZ  8192
 int DATA[] = { PIN_D0, PIN_D1, PIN_D2, PIN_D3, PIN_D4, PIN_D5, PIN_D6, PIN_D7 };
 
