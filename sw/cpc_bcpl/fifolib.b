@@ -27,11 +27,11 @@ AND  fifo1_out_bytes (ptr, max) = VALOF $(
   // Listing source: fifo1_out_bytes.lst
 
   INLINE #xDD,#x66,#x7D,#xDD,#x6E,#x7C,#x11,#x00,#x00,#x01,#x81,#xFD
-  INLINE #xDD,#x7E,#x7F,#xE6,#xFF,#x28,#x08,#x17,#x38,#x2A,#x16,#xFF
-  INLINE #x5A,#x18,#x17,#xDD,#x7E,#x7E,#xE6,#xFF,#x28,#x1E,#x57,#x5F
-  INLINE #x1F,#x38,#x0B,#xED,#x78,#x1F,#x30,#x14,#x0D,#x04,#xED,#xA3
-  INLINE #x0C,#x1D,#xED,#x78,#xE6,#x02,#x28,#x08,#x0D,#x04,#xED,#xA3
-  INLINE #x0C,#x1D,#x20,#xE7,#x7A,#x93,#xDD,#x77,#x74
+  INLINE #xDD,#x7E,#x7F,#xE6,#xFF,#x28,#x08,#x17,#x38,#x2B,#x16,#xFF
+  INLINE #x5A,#x18,#x18,#xDD,#x7E,#x7E,#xE6,#xFF,#x28,#x1F,#x57,#x5F
+  INLINE #x1F,#x38,#x0C,#xED,#x78,#xE6,#x02,#x30,#x14,#x0D,#x04,#xED
+  INLINE #xA3,#x0C,#x1D,#xED,#x78,#xE6,#x02,#x28,#x08,#x0D,#x04,#xED
+  INLINE #xA3,#x0C,#x1D,#x20,#xE6,#x7A,#x93,#xDD,#x77,#x74
   RESULTIS f
 $)
 

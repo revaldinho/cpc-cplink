@@ -32,7 +32,7 @@ NEXT:
         JR   c, TOP1    ; and start at byte 1 if so
 TOP2:
         IN   a,(c)      ; get DOR status flag
-        RRA
+        AND  0x2
         JR   nc,END     ; go to END if no data available
         DEC   c         ; point to data reg
         INC   b         ; pre-incr b
@@ -41,7 +41,7 @@ TOP2:
         DEC   e
 TOP1:
         IN   a,(c)      ; get DIR status flag
-        AND   0x2
+        AND  0x2
         JR   z,END      ; go to END if no data available
         DEC   c         ; point to data reg
         INC   b         ; pre-incr b
