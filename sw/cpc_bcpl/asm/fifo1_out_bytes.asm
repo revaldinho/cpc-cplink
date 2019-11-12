@@ -31,9 +31,9 @@ NEXT:
         RRA             ; check if count is odd
         JR   c, TOP1    ; and start at byte 1 if so
 TOP2:
-        IN   a,(c)      ; get DOR status flag
+        IN   a,(c)      ; get DIR status flag
         AND  0x2
-        JR   nc,END     ; go to END if no data available
+        JR   z,END     ; go to END if no data available
         DEC   c         ; point to data reg
         INC   b         ; pre-incr b
         OUTI            ; b--, OUT(bc) <- hl, hl++
