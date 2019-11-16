@@ -37,6 +37,50 @@ _fifo_reset::
         ret
 
 	;; --------------------------------------------------------------
+	;; fifo_get_dor
+	;; --------------------------------------------------------------
+	;;
+	;; Check FIFO Data Output Ready (DOR) flag and return 1 if set, or
+        ;; 0 otherwise
+	;;
+	;; Entry
+	;; - None
+	;;
+	;; Exit
+	;; - L = state of DOR
+	;; - AF corrupt, all other registers preserved
+        ;; 
+_fifo_get_dor::
+        ld   a,#0xfd
+        in   a,(#0x81)         	; get status
+        and  #0x1              	; isolate DOR flag
+        ld   l,a                ; transfer to l as return value
+        ret
+
+	;; --------------------------------------------------------------
+	;; fifo_get_dir
+	;; --------------------------------------------------------------
+	;;
+	;; Check FIFO Data Input Ready (DIR) flag and return 1 if set, or
+        ;; 0 otherwise
+	;;
+	;; Entry
+	;; - None
+	;;
+	;; Exit
+	;; - L = state of DIR
+	;; - AF corrupt, all other registers preserved
+        ;; 
+_fifo_get_dir::
+        ld   a,#0xfd
+        in   a,(#0x81)         	; get status
+        and  #0x2              	; isolate DIR flag (zero carry)
+        rra                     ; quick shift to LSB
+        ld   l,a                ; transfer to l as return value
+        ret
+        
+        
+	;; --------------------------------------------------------------
 	;; fifo_in_byte    (__z88dk_fastcall)
 	;; --------------------------------------------------------------
 	;;
@@ -158,8 +202,31 @@ _fifo_in_bytes::
         and  #0xFF              ; check if A is zero
         jr   z, fibs_end
         inc  c                  ; point to status register first
-        rra                     ; check if count is odd in which case start at top1
-        jr   c, fibs_top1       ; else start at top2 to progress in twos
+        and  #0x03              ; Take count modulus 4 to find entry point
+        cp   #1
+        jr   z, fibs_top1
+        cp   #2
+        jr   z, fibs_top2
+        cp   #3
+        jr   z, fibs_top3
+fibs_top4:
+        in   a,(c)              ; get dor status flag
+        rra
+        jr   nc,fibs_end  	; go to end if no data available
+        dec  c            	; point to data reg
+        ini               	; (hl)<-in(bc), hl++, b--
+        inc  b            	; restore b
+        inc  c            	; point to status reg for next check
+        dec  e            	; update counter (but no need to check for zero here)
+fibs_top3:
+        in   a,(c)              ; get dor status flag
+        rra
+        jr   nc,fibs_end  	; go to end if no data available
+        dec  c            	; point to data reg
+        ini               	; (hl)<-in(bc), hl++, b--
+        inc  b            	; restore b
+        inc  c            	; point to status reg for next check
+        dec  e            	; update counter (but no need to check for zero here)
 fibs_top2:
         in   a,(c)              ; get dor status flag
         rra
@@ -178,7 +245,7 @@ fibs_top1:
         inc  b            	; restore b
         inc  c            	; point to status reg for next check
         dec  e            	; decrement counter and check if done
-        jr   nz,fibs_top2 	; if not loop again
+        jr   nz,fibs_top4 	; if not loop again
 fibs_end:
         ld   a,d          	; restore max count
         sub  e            	; subtract remaining bytes
@@ -209,8 +276,31 @@ _fifo_out_bytes::
         and  #0xFF
         jr   z, fobs_end
         inc  c                  ; point to status register first
-        rra                     ; check if count is odd in which case start at top1
-        jr   c, fobs_top1       ; else start at top2 to progress in twos
+        and  #0x03              ; Take count modulus 4 to find entry point
+        cp   #1
+        jr   z, fobs_top1
+        cp   #2
+        jr   z, fobs_top2
+        cp   #3
+        jr   z, fobs_top3
+fobs_top4:
+        in   a,(c)              ; get dir status flag
+        and  #0x2
+        jr   z,fobs_end  	; go to end if no data available
+        dec  c            	; point to data reg
+        inc  b                  ; pre-incr B
+        outi               	; b-- ; OUT(BC) <- (hl) ; hl++
+        inc  c            	; point to status reg for next check
+        dec  e            	; update counter (but no need to check for zero here)
+fobs_top3:
+        in   a,(c)              ; get dir status flag
+        and  #0x2
+        jr   z,fobs_end  	; go to end if no data available
+        dec  c            	; point to data reg
+        inc  b                  ; pre-incr B
+        outi               	; b-- ; OUT(BC) <- (hl) ; hl++
+        inc  c            	; point to status reg for next check
+        dec  e            	; update counter (but no need to check for zero here)
 fobs_top2:
         in   a,(c)              ; get dir status flag
         and  #0x2
@@ -229,7 +319,7 @@ fobs_top1:
         outi               	; b-- ; OUT(BC) <- (hl) ; hl++
         inc  c            	; point to status reg for next check
         dec  e            	; decrement counter and check if done
-        jr   nz,fobs_top2 	; if not loop again
+        jr   nz,fobs_top4 	; if not loop again
 fobs_end:
         ld   a,d          	; restore max count
         sub  e            	; subtract remaining bytes
@@ -258,8 +348,21 @@ _fifo_in_nc_bytes::
         call fifo_ext_param     ; get buffer pointer in hl, number of bytes in a
         and  #0xFF
         jr   z, finbs_end
-        rra                     ; check if count is odd in which case start at top1
-        jr   c, finbs_top1      ; else start at top2 to progress in twos
+        and  #0x03              ; Take count modulus 4 to find entry point
+        cp   #1
+        jr   z, finbs_top1
+        cp   #2
+        jr   z, finbs_top2
+        cp   #3
+        jr   z, finbs_top3
+finbs_top4:
+        ini               	; (hl)<-in(bc), hl++, b--
+        inc  b            	; restore b
+        dec  e            	; decrement counter but no need to check
+finbs_top3:
+        ini               	; (hl)<-in(bc), hl++, b--
+        inc  b            	; restore b
+        dec  e            	; decrement counter but no need to check
 finbs_top2:
         ini               	; (hl)<-in(bc), hl++, b--
         inc  b            	; restore b
@@ -268,7 +371,7 @@ finbs_top1:
         ini               	; (hl)<-in(bc), hl++, b--
         inc  b            	; restore b
         dec  e            	; decrement counter and check if done
-        jr   nz,finbs_top2 	; if not loop again
+        jr   nz,finbs_top4 	; if not loop again
 finbs_end:
         ld   a,d          	; restore max count
         sub  e            	; subtract remaining bytes
@@ -297,8 +400,21 @@ _fifo_out_nc_bytes::
         call fifo_ext_param     ; get buffer pointer in hl, number of bytes in a
         and  #0xFF
         jr   z, fonbs_end
-        rra                     ; check if count is odd in which case start at top1
-        jr   c, fonbs_top1      ; else start at top2 to progress in twos
+        and  #0x03              ; Take count modulus 4 to find entry point
+        cp   #1
+        jr   z, fonbs_top1
+        cp   #2
+        jr   z, fonbs_top2
+        cp   #3
+        jr   z, fonbs_top3
+fonbs_top4:
+        inc  b            	; pre-inc  b
+        outi               	; b-- ; OUT(BC)<-(HL) ; hl++
+        dec e
+fonbs_top3:
+        inc  b            	; pre-inc  b
+        outi               	; b-- ; OUT(BC)<-(HL) ; hl++
+        dec e
 fonbs_top2:
         inc  b            	; pre-inc  b
         outi               	; b-- ; OUT(BC)<-(HL) ; hl++
@@ -307,7 +423,7 @@ fonbs_top1:
         inc  b            	; pre-inc  b
         outi               	; b-- ; OUT(BC)<-(HL) ; hl++
         dec  e            	; decrement counter and check if done
-        jr   nz,fonbs_top2 	; if not loop again
+        jr   nz,fonbs_top4 	; if not loop again
 fonbs_end:
         ld   a,d                ; restore max count
         sub  e            	; subtract remaining bytes

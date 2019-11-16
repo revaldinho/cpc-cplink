@@ -7,3 +7,5 @@ extern uint8_t fifo_in_bytes(uint8_t *buffer, uint16_t num_bytes) ;
 extern uint8_t fifo_out_bytes(uint8_t *buffer, uint16_t num_bytes) ;
 extern uint8_t fifo_in_nc_bytes(uint8_t *buffer, uint16_t num_bytes) ;
 extern uint8_t fifo_out_nc_bytes(uint8_t *buffer, uint16_t num_bytes) ;
+extern uint8_t fifo_get_dor();
+extern uint8_t fifo_get_dir();
