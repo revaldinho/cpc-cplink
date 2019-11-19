@@ -1,0 +1,18 @@
+[Unit]
+Description=MCP Service That Provides Services to CPC
+After=multi-user.target
+
+[Service]
+Type=idle
+User=pi
+ExecStart=/bin/bash /home/pi/mcp_pi/run_mcp_pi.sh
+
+[Install]
+WantedBy=multi-user.target
+
+
+
+
+
+
+

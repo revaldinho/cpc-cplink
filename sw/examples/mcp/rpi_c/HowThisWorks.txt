@@ -1,0 +1,80 @@
+How to Install
+==============
+
+To install open a shell command and enter the following
+
+1) mkdir /home/pi/mcp_pi
+2) cd mcp_pi and copy the MCP files to that directory
+3) chmod +x install_mcp_service.sh
+4) ./install_mcp_service.sh
+
+Step 4 will compile the mcp_pi executable and install the files needed for it to run as a service on the pi. 
+The service will then be started and details of the start shown to the terminal.
+
+The service will auto start when power is applied to the pi and the pi boots (circa 30 seconds).
+
+How this works on the CPC side
+==============================
+
+CPC needs to send text commands across the CPLINK interface e.g. 'PING\n' and waits for a text response e.g. "PONG!\n"
+
+Commands are case sensitive when being sent across the interface (well the mcp_pi treats them that way).
+
+Example commands are provided in the cpc folder of mcp_pi:
+
+	PING.BAS which sends a ping across the interface and waits for a 'PONG!\n' response to show PI is working
+	SHUTDOWN.BAS which tells the pi to "sudo shutdown -h +1" which will shutdown in about 90 seconds - be patient!
+	TIME.BAS which will return the PI time in 'HH:MM\n' format string
+	DATE.BAS which will return the PI date in 'DD:MM:YYYY\n' format string
+	RESET.BAS which will reset the internals of mcp_pi running on the pi, return 'OK\n' 
+                  (flushes queues, running commands, memory pages etc).
+
+These can be run on the CPC with run"PING.BAS" - if the interface is working and the pi running you will see the 'PONG!' 
+response on the CPC screen.  You have sent your first command to the pi and used its PING service.
+	
+How this works on the PI side
+=============================
+
+PI waits for commands from the CPC which are \n terminated (in command mode) in the in_queue.
+
+Full format of command is 'COMMAND_NAME\n' or 'COMMAND_NAME PARAM1\n' or 'COMMAND_NAME PARAM1 PARAM2 etc\n'.
+
+The command is validated (with or without params) and passed to the command processor to BEGIN execution
+
+Once the command is complete then the out_queue sends its data to the interface to go to the CPC
+
+The command processor will 'tick' performing the segment of any functions running and return responses 
+to the CPC via the out_queue
+	
+	
+The whole program is single threaded so commands must not last for ever as they must return to the CPC.
+The protocol can be in command mode (with \n terminated commands) but can switch to other modes e.g. 
+binary for data transfer etc.
+
+Commands can be multistage and can run in 'parallel' i.e. think of a command as having segments.  So
+for example 'shutdown' could have two segments - segment 1 - sends "ok" to CPC, 
+segment 2 runs an os process to shutdown the pi after 30 seconds.
+
+Similarly a data transfer can be in segments of for example 4K and then the next segment only gets
+sent when there is space in the out_queue to send the data to the CPC which the pi will check for on
+its next command 'tick'
+
+Because the commands are in segments you can have a number of commands running at once i.e. in 'parrallel'. 
+For example you can have command 1 doing a data transfer to the CPC, command 2 writing to the PI display, 
+command 3 getting the date and time etc.  The execution of each of the segments are interleaved and only one 
+is actually running at a time but with the segment interleave it can look like its running several long
+running commands at the same time.
+
+Each command can be viewed as a 'service' that the pi can deliver to the CPC.  The actual code for a service
+does not need to be built in to the MCP program (but can) as the MCP can run it as an external os process/socket/file
+and process the return back to the CPC etc.
+
+Built In Commands:
+
+	PING - is the PI there and answering commands
+	SHUTDOWN - shutdown the PI in 15 seconds (WILL NOT WORK if MCP_PI is NOT run as a service due to permissions)
+	DATE - get the current date (according to pi)
+	TIME - get the current time (according to pi)
+	RESET - will reset all queues, delete all running commands
+	
+If you are running mcp_pi from the command line - run it as "sudo ./mcp_pi" for shutdown to work.
