@@ -183,21 +183,10 @@ BOOL command_reset(Queue *in_queue, Queue *out_queue, int tick)
 {
 	BYTE *response = "OK\n";
 
-    printf("Reset Queues and Command Processor\n");
+    	printf("Reset Queues and Command Processor\n");
 	
 	/* reset the queues */
 	reset_queues();
-	
-	if(write_data_to_queue(out_queue, response, strlen(response)) != TRUE)
-	{
-		printf("Unable to write response '%s' to out_queue", response);
-		/* return FALSE as command is not complete i.e. will be tried again */
-		return( FALSE );
-	}
-	
-	/* return TRUE - function completed i.e. no more segments to do on each tick */
-	return( TRUE );
-
 	/* reset the command processor */
 	command_processor_init();
 	
