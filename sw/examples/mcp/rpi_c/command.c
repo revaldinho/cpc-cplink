@@ -115,7 +115,7 @@ BOOL command_shutdown(Queue *in_queue, Queue *out_queue, int tick)
 	#ifdef BUILD_ON_PC
 		printf("Running Shutdown (Fake) : %d\n", system("/bin/pwd"));
 	#else
-		printf("Running Shutdown : %d\n", system("/sbin/shutdown -h +1"));
+		printf("Running Shutdown : %d\n", system("sudo /sbin/shutdown -h +1"));
 	#endif
 	
 	/* write the OK response to the out_queue for sending to client */
