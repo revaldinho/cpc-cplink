@@ -1,0 +1,57 @@
+How to set up Dev environment for CPC-CPLINK
+============================================
+
+On Ubuntu 18.04 - install build environment for C coding (all done from xterm console)
+
+1) Install Mono from https://www.mono-project.com/download/stable/#download-lin following their instructions
+
+Ensure you "sudo apt install mono-complete"
+
+2) Go to https://lronaldo.github.io/cpctelera/files/readme-txt.html#Installing_CPCtelera to install CPCtelera which includes an environment to build with SDCC c compiler.
+
+Install the following:
+	sudo apt-get install build-essential
+	sudo apt-get install bison
+	sudo apt-get install flex
+	sudo apt-get install libboost-dev
+	sudo apt-get install libfreeimage-dev
+	sudo apt-get install git
+
+Clone the github repo for cpctelera
+
+git clone https://github.com/lronaldo/cpctelera
+cd cpctelera/
+./setup.sh
+
+Shut and open a new terminal to pickup changes.
+
+3) Download Revaldinho src examples from https://github.com/revaldinho/cpc-cplink/wiki
+
+git clone https://github.com/revaldinho/cpc-cplink.git
+cd cpclink/sw/cpc_cpct/fifo
+
+Type make and see from the feedback from the fifo bin/CDT/DSK are all built
+
+You have just built the cpc c program with assembly fifo routines.
+
+
+On Raspberry Pi Buster - Build environment for the Pi side of Code
+==================================================================
+On a raspberry pi (done using buster-lite on a pi4).  I use mine headless with ssh enabled over wifi.
+
+1) Install the following:
+	sudo apt-get install git
+	sudo apt-get install wiringpi
+
+2) Download Revaldinho src examples from https://github.com/revaldinho/cpc-cplink/wiki
+
+git clone https://github.com/revaldinho/cpc-cplink.git
+cd cpclink/sw/rpi_c
+
+Type make to see the loopback c test program compile.
+
+You should have loopback_wpi binary ready to run - run it at the command line and run fifo.bin on the CPC
+
+To get it on the CPC (via M4) run 
+
+	xfer -u 192.168.0.155 dev/obj/fifo.bin dev/fifo 2 0x300 0x300
