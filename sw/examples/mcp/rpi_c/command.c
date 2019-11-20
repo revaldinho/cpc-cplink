@@ -120,22 +120,12 @@ BOOL command_shutdown(Queue *in_queue, Queue *out_queue, int tick)
 	
 	/* write the OK response to the out_queue for sending to client */
 	if(write_data_to_queue(out_queue, response, strlen(response)) != TRUE)
-	{	BYTE *response = "Unknown Command\n";
-	
-	if(write_data_to_queue(out_queue, response, strlen(response)) != TRUE)
 	{
 		printf("Unable to write response '%s' to out_queue", response);
 		/* return FALSE as command is not complete i.e. will be tried again */
 		return( FALSE );
 	}
 	
-	/* return TRUE - function completed i.e. no more segments to do on each tick */
-	return( TRUE );
-
-		printf("Unable to write response '%s' to out_queue", response);
-		/* return FALSE as command is not complete i.e. will be tried again */
-		return( FALSE );
-	}
 	return( TRUE );
 }
 
