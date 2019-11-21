@@ -59,32 +59,6 @@ AND  fifo2_out_bytes_nc (ptr, max) = VALOF $(
   RESULTIS f
 $)
 
-AND  fifo3_in_bytes_nc (ptr, max) = VALOF $(
-  LET f=0
-  // Listing source: fifo3_in_bytes_nc.lst
-
-  INLINE #xDD,#x66,#x7D,#xDD,#x6E,#x7C,#x1E,#x00,#x01,#x80,#xFD,#xDD
-  INLINE #x7E,#x7F,#xE6,#xFF,#x28,#x07,#x17,#x38,#x2C,#x3E,#xFF,#x18
-  INLINE #x07,#xDD,#x7E,#x7E,#xE6,#xFF,#x28,#x21,#x5F,#xCB,#x3F,#xCB
-  INLINE #x3F,#x28,#x14,#xED,#xA2,#x04,#xED,#xA2,#x04,#xED,#xA2,#x04
-  INLINE #xED,#xA2,#x04,#x3D,#x20,#xF1,#x7B,#xE6,#x03,#x28,#x06,#xED
-  INLINE #xA2,#x04,#x3D,#x20,#xFA,#xDD,#x73,#x74
-  RESULTIS f
-$)
-
-AND  fifo3_out_bytes_nc (ptr, max) = VALOF $(
-  LET f=0
-  // Listing source: fifo3_out_bytes_nc.lst
-
-  INLINE #xDD,#x66,#x7D,#xDD,#x6E,#x7C,#x1E,#x00,#x01,#x80,#xFD,#xDD
-  INLINE #x7E,#x7F,#xE6,#xFF,#x28,#x07,#x17,#x38,#x2C,#x3E,#xFF,#x18
-  INLINE #x07,#xDD,#x7E,#x7E,#xE6,#xFF,#x28,#x21,#x5F,#xCB,#x3F,#xCB
-  INLINE #x3F,#x28,#x14,#x04,#xED,#xA3,#x04,#xED,#xA3,#x04,#xED,#xA3
-  INLINE #x04,#xED,#xA3,#x3D,#x20,#xF1,#x7B,#xE6,#x03,#x28,#x06,#x04
-  INLINE #xED,#xA3,#x3D,#x20,#xFA,#xDD,#x73,#x74
-  RESULTIS f
-$)
-
 AND  fifo_in_byte (ptr) = VALOF $(
   LET f=0
   // Listing source: fifo_in_byte.lst

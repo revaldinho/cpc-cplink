@@ -87,16 +87,6 @@ AND start() = VALOF $(
   show_stats(i,j,t)
   check_data( tx, rx, SZ)
 
-  writef("*nTest 4: Send/Receive 255 byte blocks, no status checks, 4 byte unrolled loops*n")
-  i,j:=0,0
-  resettime()
-  WHILE i < DBL_SZ DO i:= i+ (fifo3_out_bytes_nc( txbyteptr+i, DBL_SZ-i) )
-  WHILE j < DBL_SZ DO j:= j+ (fifo3_in_bytes_nc( rxbyteptr+j, DBL_SZ-j) )
-  t := scaledtime(2)
-
-  show_stats(i,j,t)
-  check_data( tx, rx, SZ)
-
   presskeytoexit()
   RESULTIS 0
 $)

@@ -1,4 +1,4 @@
-             ; fifo_out_bytes_nc
+             ; fifo2_out_bytes_nc
              ; 
              ; Write up to 255 bytes from the FIFO ignoring FIFO status
              ; flag states.
@@ -41,4 +41,3 @@ TOP1:
         JR   nz,TOP2   ; if not loop again
 END:         
         LD   (ix+116),d   ; write bytes rcvd ready to exit
-
