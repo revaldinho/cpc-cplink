@@ -1,8 +1,8 @@
 	org 116
-	        
-	call gethl ; payload length
+        ld bc, $fd81 	        ; point to status reg
+	call gethl              ; payload length
         ex   de, hl 
-        call gethl ; destination address
+        call gethl              ; destination address
 
 onemore:
         call getbyte
@@ -12,8 +12,8 @@ onemore:
         ld a, d
         or e
         jr nz,onemore
-        call gethl ; execution address
-        push hl ; nop here to suppress auto-run
+        call gethl              ; execution address
+        push hl                 ; nop here to suppress auto-run
         ret
 
 gethl:
@@ -24,13 +24,12 @@ gethl:
         ret
 
 getbyte:
-        ld bc, $fd81
-checkstatus:
         in a,(c)
         rra
-        jr nc, checkstatus
-        dec bc
+        jr nc, getbyte
+        dec c                   ; point to data reg
         in a,(c)
+        inc c                   ; point to status reg
         ret
         nop
         nop
