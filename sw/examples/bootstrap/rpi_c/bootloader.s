@@ -1,4 +1,4 @@
-	org 116
+	org 126
         ld bc, $fd81 	        ; point to status reg
 	call gethl              ; payload length
         ex   de, hl 

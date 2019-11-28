@@ -5,7 +5,7 @@
 //
 // One line bootstrap to run on CPC - 
 //
-//     FOR I=100 TO 160: POKE I,INP(&FD80): NEXT: CALL 116
+//     FOR I=110 TO 170: POKE I,INP(&FD80): NEXT: CALL 126
 //
 #include <wiringPi.h>
 #include <stdio.h>
