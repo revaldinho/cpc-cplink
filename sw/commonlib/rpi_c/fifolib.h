@@ -4,10 +4,8 @@
 #include <string.h>
 #include <unistd.h>
 
-// Comment next line out for trial compiles on system without wiringPi library
-#define PI 1
 
-#ifdef PI
+#ifdef WIRINGPI
 #include <wiringPi.h>
 #define GET_DIR digitalRead(PIN_DIR)
 #define GET_DOR digitalRead(PIN_DOR)
