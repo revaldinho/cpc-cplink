@@ -5,7 +5,7 @@
 #include <unistd.h>
 
 // Comment next line out for trial compiles on system without wiringPi library
-//#define PI 1
+#define PI 1
 
 #ifdef PI
 #include <wiringPi.h>
