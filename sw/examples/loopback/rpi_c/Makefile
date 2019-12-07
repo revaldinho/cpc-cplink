@@ -1,4 +1,9 @@
 # To be run on Raspberry Pi
+#
+# Use:
+#      make [ USERDEFINES=  ] 
+#
+
 VPATH=../../../commonlib/rpi_c
 
 USERDEFINES?=-DWIRINGPI=1
@@ -9,7 +14,7 @@ fifolib.o: fifolib.c fifolib.h
 	(cd ${VPATH} ; make USERDEFINES=${USERDEFINES} ) 
 
 loopback: loopback.c fifolib.o 
-	cc loopback.c ${VPATH}/fifolib.o -o loopback -I${VPATH}
+	cc loopback.c ${VPATH}/fifolib.o -o loopback -I${VPATH} -lwiringPi
 
 clean:
 	(cd ${VPATH} ; make clean)

@@ -5,14 +5,9 @@
 #include <unistd.h>
 
 
-#ifdef WIRINGPI
 #include <wiringPi.h>
 #define GET_DIR digitalRead(PIN_DIR)
 #define GET_DOR digitalRead(PIN_DOR)
-#else
-#define GET_DIR 1
-#define GET_DOR 1
-#endif 
 
 #ifndef PI1 
 // BCM Pin numbering
@@ -47,6 +42,6 @@
 #endif
 
 extern void setup_pins() ;
-extern void write_fifo_byte(int txdata) ; 
+extern void write_fifo_byte(uint8_t txdata) ; 
 extern int read_fifo_byte() ;
 

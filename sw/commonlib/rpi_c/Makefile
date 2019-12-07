@@ -4,7 +4,7 @@
 USERDEFINES?=-DWIRINGPI=1
 
 fifolib.o : fifolib.c fifolib.h
-	cc -c fifolib.c -O2 -o fifolib.o ${USERDEFINES} 
+	cc -c fifolib.c -o fifolib.o ${USERDEFINES} -lwiringPi
 
 clean:
 	rm -f *.o *~ >& /dev/null

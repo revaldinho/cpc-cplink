@@ -47,7 +47,7 @@ int main( int argc, char *argv[] ) {
   }
   setup_pins() ;
   for (;;) {
-    if ( GET_DOR) {
+    if (GET_DOR) {
       queue[rptr] = read_fifo_byte();
       rptr = (rptr+1) % QUEUE_SZ;
     }
