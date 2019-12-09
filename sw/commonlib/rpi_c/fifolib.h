@@ -5,9 +5,14 @@
 #include <unistd.h>
 
 
-#include <wiringPi.h>
-#define GET_DIR digitalRead(PIN_DIR)
-#define GET_DOR digitalRead(PIN_DOR)
+#ifdef WIRINGPI
+	#include <wiringPi.h>
+	#define GET_DIR digitalRead(PIN_DIR)
+	#define GET_DOR digitalRead(PIN_DOR)
+#else
+	#define GET_DIR 0
+	#define GET_DOR 0
+#endif 
 
 #ifndef PI1 
 // BCM Pin numbering
