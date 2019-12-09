@@ -1,0 +1,14 @@
+-mjwx
+-i obj/ping.ihx
+-b _CODE = 0x4000
+-b _DATA = 0x0000
+-u
+-k /Users/richarde/Documents/nas/Development/git/cpctelera/cpctelera/tools/sdcc-3.6.8-r9946/bin/../share/sdcc/lib/z80
+-k /opt/local/share/sdcc/lib/z80
+-l /Users/richarde/Documents/nas/Development/git/cpctelera/cpctelera/cpctelera.lib
+-l z80
+obj/main.rel
+obj/fifolib.rel
+obj/firmware.rel
+
+-e

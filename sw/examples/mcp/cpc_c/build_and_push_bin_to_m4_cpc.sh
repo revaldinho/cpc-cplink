@@ -1,67 +1,74 @@
 #!/bin/bash
+#
+# build_and_push_bin_to_m4_cpc.sh [-i|--ipaddr ip_addr] [-d|--destination destination_dir]
+#
 
-echo "Build ping.bin"
-cd ping
-make
-cd ..
+# Default ipaddr and target_dir to Shifters' original
+ip_addr=192.168.0.55
+target_dir=/
 
-echo "Sending ping.bin file to M4 on CPC"
-../xfer -u 192.168.0.55 ping/obj/ping.bin / 2 0x4000 0x4000
+#ip_addr=192.168.1.114
+#target_dir=/dev/mcp
 
-echo "Tidy up build files for ping"
-rm ping/*.cdt
-rm ping/*.dsk
-rm -r -f ping/obj/
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+    key="$1"
 
-echo "Build shutdown.bin"
-cd shutdown
-make
-cd ..
+    case $key in
+	-d|--destination)
+	    target_dir="$2"
+	    shift # past argument
+	    shift # past value
+	    ;;
+	-i|--ipaddr)
+	    ip_addr="$2"
+	    shift # past argument
+	    shift # past value
+	    ;;
+	--default)
+	    DEFAULT=YES
+	    shift # past argument
+	    ;;
+	*)    # unknown option
+	    POSITIONAL+=("$1") # save it in an array for later
+	    shift # past argument
+	    ;;
+    esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
 
-echo "Sending shutdown.bin file to M4 on CPC"
-../xfer -u 192.168.0.55 shutdown/obj/shutdown.bin / 2 0x4000 0x4000
 
-echo "Tidy up build files for shutdown"
-rm shutdown/*.cdt
-rm shutdown/*.dsk
-rm -r -f shutdown/obj/
+# Test IP addr
+echo "Testing M4 IP address"
+ping -c 1 $ip_addr
+if [ $? -gt 0 ]
+then
+    echo "Error - could not contact M4 at IP addr $ip_addr"
+    exit 1
+fi
 
-echo "Build time.bin"
-cd time
-make
-cd ..
+declare -a command_list=(
+    "alloctest" 
+    "date" 
+    "helptest" 
+    "ping" 
+    "reboot" 
+    "reset" 
+    "shutdown" 
+    "time" 
+    "troff" 
+    "tron" 
+)
 
-echo "Sending time.bin file to M4 on CPC"
-../xfer -u 192.168.0.55 time/obj/time.bin / 2 0x4000 0x4000
 
-echo "Tidy up build files for time"
-rm time/*.cdt
-rm time/*.dsk
-rm -r -f time/obj/
-
-echo "Build date.bin"
-cd date
-make
-cd ..
-
-echo "Sending date.bin file to M4 on CPC"
-../xfer -u 192.168.0.55 date/obj/date.bin / 2 0x4000 0x4000
-
-echo "Tidy up build files for date"
-rm date/*.cdt
-rm date/*.dsk
-rm -r -f date/obj/
-
-echo "Build reset.bin"
-cd reset
-make
-cd ..
-
-echo "Sending reset.bin file to M4 on CPC"
-../xfer -u 192.168.0.55 reset/obj/reset.bin / 2 0x4000 0x4000
-
-echo "Tidy up build files for reset"
-rm reset/*.cdt
-rm reset/*.dsk
-rm -r -f reset/obj/
-
+for command in "${command_list[@]}"
+do
+    echo "Building ${command}.bin"
+    pushd $command
+    make  
+    echo "Sending ${command}.bin file to M4 on CPC"
+    xfer -u ${ip_addr} obj/${command}.bin ${target_dir} 2 0x4000 0x4000
+    rm -rf *cdt *dsk obj/
+    popd
+done

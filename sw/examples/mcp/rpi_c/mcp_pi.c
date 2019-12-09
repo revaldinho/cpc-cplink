@@ -17,10 +17,11 @@
 #include <unistd.h>
 
 #include "mcp_pi.h"
+#include "fifolib.h"
+#include "packet.h"
 #include "command.h"
 #include "command_processor.h"
-
-BYTE DATA[] = { PIN_D0, PIN_D1, PIN_D2, PIN_D3, PIN_D4, PIN_D5, PIN_D6, PIN_D7 };
+#include "memstore_manager.h"
 
 /*****************/
 /*               */
@@ -31,209 +32,7 @@ BYTE DATA[] = { PIN_D0, PIN_D1, PIN_D2, PIN_D3, PIN_D4, PIN_D5, PIN_D6, PIN_D7 }
 Queue in_queue;
 Queue out_queue;
 
-/***********************************/
-/*                                 */
-/* Interface functions             */
-/*                                 */
-/***********************************/
-
-/* setup pins on the GPIO for the interface */
-void setup_pins() 
-{
-  /* init wiring pi library */
-  wiringPiSetupGpio();
-
-  /* set up the pins for input mod */
-  for(int i=0; i<8; i++)
-  {
-    pinMode(DATA[i],INPUT);
-  }
-
-  pinMode(PIN_DIR, INPUT);
-  pinMode(PIN_DOR, INPUT);
-  pinMode(PIN_SI, OUTPUT);
-  digitalWrite(PIN_SI,LOW);
-  pinMode(PIN_SOB, OUTPUT);
-  digitalWrite(PIN_SOB,LOW);
-  pinMode(PIN_WNR, OUTPUT);
-  digitalWrite(PIN_WNR,LOW);
-}
-
-/* write a byte to the interface */
-void write_fifo_byte(BYTE txdata) 
-{
-  int bit;
-
-  digitalWrite(PIN_WNR,HIGH);
-
-  for(int i=0; i<8; i++) 
-  {
-    bit = (txdata & 0x1)? HIGH: LOW;
-    pinMode(DATA[i], OUTPUT);
-    digitalWrite(DATA[i],bit);
-    txdata = txdata >> 1;
-  }
-  
-  digitalWrite(PIN_SI, HIGH);  
-  digitalWrite(PIN_SI, LOW);
-
-  for(int i=0; i<8; i++) 
-  {
-    pinMode(DATA[i], INPUT);
-  }
-
-  digitalWrite(PIN_WNR, LOW);
-}
-
-/* read a byte from the interface */
-int read_fifo_byte() 
-{
-  int rval = 0;
-
-  for(int i=7; i>=0; i--) 
-  {
-    rval = (rval << 1) + (digitalRead(DATA[i]) & 0x1);
-  }
-
-  digitalWrite(PIN_SOB, HIGH);
-  digitalWrite(PIN_SOB, LOW);
-
-  return(rval);
-}
-
-/**************************************************************/
-/*                                                            */
-/* Functions to work with the queue                           */
-/*                                                            */
-/**************************************************************/
-
-/* init_queue */
-void init_queue(Queue *queue)
-{
-  /* this will clear the buffers and set mode to 'command' */
-  memset(queue, 0, sizeof(Queue));
-}
-
-/* is a complete command in in_queue */
-BOOL is_command_available(Queue *in_queue)
-{
-  int index = 0;
-  int read_index = 0;
-  
-  BOOL command_found = FALSE;
-  
-  /* search the queue for a \n terminated string from the current read point */
-  /* but not past the store point (and remember to wrap around in circular queue*/
-  
-  read_index = (in_queue->read_next_byte + index) % QUEUE_SIZE;
-  
-  while((read_index != in_queue->store_next_byte ) && (command_found == FALSE))
-  {
-    if((in_queue->data[read_index] == '\n') && (index > 0))
-    {
-      /* found a \n at the end of a command */
-      command_found = TRUE;
-    }
-
-    index++;
-    
-    read_index = (in_queue->read_next_byte + index) % QUEUE_SIZE;
-
-  } /* while */
-
-  return( command_found );
-}
-
-/* get the text string of the command name */
-void get_command_string(Queue *in_queue, BYTE *command_string)
-{
-  int index = 0;
-  int read_index = (in_queue->read_next_byte + index) % QUEUE_SIZE;
-  BOOL command_name_complete = FALSE;
-  
-  /* clear the command string */
-  memset(command_string, 0, COMMAND_NAME_LENGTH);
-  
-  /* search the queue for a space from the current read point as the command format */
-  /* is COMMANDNAME OPTIONALPARAM1 ETC\n so we will look from the current read point to */
-  /* the space to get the COMMANDNAME but only for a MAXIMUM size of the COMMANDNAME */
-  
-  while((index < COMMAND_NAME_LENGTH) && (command_name_complete == FALSE))
-  {
-    /* did we find a space to terminate the command name text */
-    /* or a \n indicating end of command i.e. no params       */
-    if(((in_queue->data[read_index] == ' ') || (in_queue->data[read_index] == '\n')) && (index > 0))
-    {
-      /* found a space (or \n) at the end of a command name */
-      command_name_complete = TRUE;
-      /* increment the read_next_byte pointer as we have read the command name from the queue*/
-      in_queue->read_next_byte = (read_index + 1) % QUEUE_SIZE;
-    }
-    else /* copy the byte to the command name string */
-    {
-      command_string[index] = in_queue->data[read_index];
-    }
-
-    index++;
-    
-    read_index = (in_queue->read_next_byte + index) % QUEUE_SIZE;
-
-  } /* while */  
-}
-
-BOOL get_data_from_queue(Queue *queue, BYTE *data)
-{
-  return( FALSE );
-}
-
-BOOL write_data_to_queue(Queue *queue, BYTE *data, int size_of_data)
-{
-  #ifdef DEBUG_MCP
-    printf("Write Start OUT Queue %d: read: %d write %d\n", QUEUE_SIZE, queue->read_next_byte, queue->store_next_byte);
-  #endif
-  
-  /* if there is space between current store point and top of queue */
-  if(QUEUE_SIZE - queue->store_next_byte >= size_of_data )
-  {
-    /* just store the data */
-    memcpy(&queue->data[queue->store_next_byte], data, size_of_data);
-    /* increment the store pointer as we have stored data */
-    queue->store_next_byte = queue->store_next_byte + size_of_data;
-  }
-  else /* not enough space between where we are and top of queue or queue is nearly full */
-  {
-    /* enough of space to store data but split across top of queue and wrap around to bottom of queue */
-    if((QUEUE_SIZE - queue->store_next_byte) + (queue->read_next_byte - 1) >= size_of_data )
-    {
-      /* copy data in two sections */
-      /* from store_next_byte to top of queue */
-      memcpy(&queue->data[queue->store_next_byte], data, QUEUE_SIZE - queue->store_next_byte);
-      /* from bottom of queue store the remaining */
-      memcpy(&queue->data[0], data + (QUEUE_SIZE - queue->store_next_byte), size_of_data - (QUEUE_SIZE - queue->store_next_byte));
-      /* set where to store next bytes */
-      queue->store_next_byte = size_of_data - (QUEUE_SIZE - queue->store_next_byte) + 1;
-    }
-    else /* not enough space to store data - queue is full so return false to command function - it will try again */
-    {
-      return( FALSE );
-    }
-  }
-  
-  #ifdef DEBUG_MCP
-    printf("Write End OUT Queue %d: read: %d write %d\n", QUEUE_SIZE, queue->read_next_byte, queue->store_next_byte);
-    printf("OutQueue: '%s'\n", (char *)&queue->data[queue->read_next_byte]);
-  #endif
-  
-
-  return( TRUE );
-}
-
-/* reset the in_queue and out_queue and clear all data   */
-void reset_queues(void)
-{
-  init_queue(&in_queue);
-  init_queue(&out_queue);  
-}
+BOOL TRON = FALSE;
 
 /**************************************************************/
 /*                                                            */
@@ -244,116 +43,337 @@ void reset_queues(void)
 /*     Process Command                                        */
 /*   Checks if any data response queued to write to interface */
 /*     Write data to interface                                */
+/*   Tick any pending commands that are waiting to execute    */
 /*                                                            */
 /**************************************************************/
 
-void main( void ) 
+int main( void ) 
 {
   Command commandID = Unknown;
-  BYTE command_string[COMMAND_NAME_LENGTH];
+  int tick_check_counter = 0;
+  int packet_check_counter= 0;
+  
+  char command_string[MAX_COMMAND_NAME_LENGTH];
   
   printf("MCP v%s\n", VERSION);
+  
+  printf("Init ...");
+  
+  #ifndef WIRINGPI
+    printf("\n\nTHIS IS THE PC BUILD\n\n");
+  #endif
   
   /* setup interface pins */
   setup_pins();
   
   /* init the queues */
-  reset_queues();
+  queues_reset(&in_queue, &out_queue);
   
-  printf("Init ...");
-  
+ 	/* init the memstore */
+	memstore_init();
+
   /* init the command processor */
   command_processor_init();
   
   printf("Complete\n");
   printf("Starting Command Processing Loop\n");
 
-  #ifdef DEBUG_MCP_IF
-    /* pretend we received messages by inserting into queue and processing them */
-    inject_test_messages();
+  #ifdef DEBUG_MCP
+    TRON = TRUE;
+  
+    printf("TRON ON\n");
   #endif
   
+  #ifdef DEBUG_MCP_IF
+    inject_test_messages();
+  #endif
+
   /* loop for ever */
   for(;;) 
   {
+    /* RUN EVERY LOOP */
+    
     /* read data from the interface into the inqueue if data available */
-    if(digitalRead(PIN_DOR)) 
+    /* but make sure there is space to store that byte! i.e. > 0       */
+    if((number_free_bytes_in_queue_to_write_too(&in_queue) > 0) && GET_DOR) 
     {
       /* read a byte from the interface and store in incoming queue */
-      in_queue.data[in_queue.store_next_byte] = read_fifo_byte();
+      store_to_current_write_byte(&in_queue, read_fifo_byte());
       
-      #ifdef DEBUG_MCP
-        printf("Read %c %d\n",in_queue.data[in_queue.store_next_byte], in_queue.data[in_queue.store_next_byte]);
+      #ifdef DEBUG_MCP_2     
+        printf("Read %c\n", in_queue.data[in_queue.store_next_byte]);
       #endif
-      
-      /* use the queue in a loop so ensure the in_queue.store_next_byte wraps around */
-      in_queue.store_next_byte = (in_queue.store_next_byte+1) % QUEUE_SIZE;
+
+      /* increment the queue after storing a byte in it */
+      increment_store_next_index(&in_queue,1);
     }
 
-    #ifdef DEBUG_MCP_IF
-      /* process injected commands during dev */
+    /* RUN EVERY LOOP */
     
-      process_any_injected_commands();
-    
-    #else 
-      /* process commands in production */
-    
-      /* is a complete command in in_queue */
-      if( is_command_available( &in_queue ) == TRUE )
-      {
-        /* get the text string of the command name*/
-        get_command_string(&in_queue, command_string);
-        /* get the command id from the command_string */                   
-        commandID = get_commandID_from_string( command_string );
-        /* begin execution of its first segment  */        
-        process_command(commandID, &in_queue, &out_queue);
-      }
-    #endif
-    
-    /* if any data waiting to be written to the interface */
-    if((out_queue.read_next_byte != out_queue.store_next_byte) && digitalRead(PIN_DIR)) 
+    /* if any data waiting in out_queue to be written to the interface */
+    if((number_bytes_in_queue_to_read(&out_queue) > 0) && GET_DIR) 
     {
-      /* write the byte out */
-      write_fifo_byte(out_queue.data[out_queue.read_next_byte]);
-      /* move write pointer on, looping around queue when it gets to end */
-      out_queue.read_next_byte = (out_queue.read_next_byte+1) % QUEUE_SIZE;
+      /* read the byte from the out_queue and write the byte out to the interface */
+      write_fifo_byte(get_current_read_byte(&out_queue));
+      
+      #ifdef DEBUG_MCP_2
+        printf("Wrote %c\n", out_queue.data[out_queue.read_next_byte]);
+      #endif
+      
+      /* move out_queue read pointer on having written it to the interface */
+      increment_read_next_index(&out_queue, 1);
+    }
+
+    /****************************************************************************************/
+    /* We only want to run the is_packet_available check every so often i.e. not ever loop */
+    /* so that the reading in and writing out loops get more of the processing time         */
+    /****************************************************************************************/
+
+    if(packet_check_counter >= MAX_COMMAND_WAIT)
+    {
+      if(is_packet_available( &in_queue ) == TRUE)
+      {
+        int hold_read_pointer = in_queue.read_next_byte;
+      
+        /* process the packet based on type byte */
+        switch(get_packet_type(&in_queue))
+        {
+          case TextCommand:
+            
+            /****************************************************************************/
+            /* A text command is a command (plus options parameters) provided as ASCII  */
+            /* e.g. PING\n is a text command                                            */
+            /* Text commands are \n terminated (ASCII 0xA)                              */
+            /****************************************************************************/
+            
+            /* get the text string of the command name*/
+            get_command_string(&in_queue, command_string);
+            
+            if(TRON) {printf("Command Received '%s'\n", command_string);}
+            
+            /* get the command id from the command_string */                   
+            commandID = get_commandID_from_string( command_string );
+            
+            if(TRON) {printf("CommandID %d\n", commandID);}
+            
+            /* begin execution of its first segment  */        
+            if(process_text_command(commandID, &in_queue, &out_queue) == FALSE)
+            {
+              /* process_command would not process the command as it would have failed  */
+              /* so we need to rewind the in_queue.read_next_byte to before the command */
+              /* was read from the queue.  This is so we can try the same command again */
+              /* later when what ever caused the process_command to return an error has */
+              /* cleared (usually a full out_queue!).  If the out_queue is full then    */
+              /* we will effectively stop processing from the in_queue as there is no   */
+              /* where to store the output from the commands when they are executed     */
+              in_queue.read_next_byte = hold_read_pointer;
+            }
+            else
+            {
+              /* process command completed - skip the '---' at end of packet */
+              queue_skip_terminator_of_packet(&in_queue);
+            }
+            break;
+            
+          case BinaryCommand:
+            
+            /****************************************************************************/
+            /* A binary command is a command (plus options parameters) provided as      */
+            /* as binary data e.g. PING is command 1 (see CommandIDs in command.h)      */
+            /* e.g. 1 is binary command for PING                                        */
+            /* Binary commands have no terminators like Text Commands                   */
+            /****************************************************************************/
+            
+            break;
+            
+          case BinaryData:
+            
+            /****************************************************************************/
+            /* Binary Data should be read by a Text or Binary Command and not directly  */
+            /* here i.e. if we got it here there is a problem                           */
+            /****************************************************************************/
+            
+            if(TRON)
+            {
+              printf("Found BinaryData packet unexpectedly\n");
+            }
+            
+            break;
+            
+          case GraphicDirectives:
+            
+            /****************************************************************************/
+            /* Binary Graphic Directives to draw to the pi screen - this is here as an   */
+            /* example and is not currently implemented YET!!                           */
+            /****************************************************************************/
+            
+            break;
+            
+          case UnknownPacket:            
+            /* Deliberate Fall through to default case */
+          case Max_PacketType:
+            /* Deliberate Fall through to default case */
+            
+         default:
+            if(TRON)
+            {
+              printf("Packet Received had invalid PACKET_TYPE %d - packet ignored!!", get_packet_type(&in_queue));
+            }
+            break;
+        }
+      }
+      
+      /* reset the counter */
+      packet_check_counter = 0;
+    }
+    else
+    {
+      packet_check_counter++;
     }
     
-    /* check if any commands need a tick to do their next bit */
-    tick_command();
+    /************************************************************************************/
+    /* we only want to run the tick_command check every so often i.e. not on every loop */
+    /* this is so the read in and write out queue commands above run more often than    */
+    /* the tick check i.e. we want data going in and out of the queues alot compared    */
+    /* to checking if a command needs to be ticked as this is an expensive operation    */
+    /************************************************************************************/
+    
+    /* check to see if its time to check the command ticks */
+    if( tick_check_counter >= MAX_TICK_WAIT )
+    {
+      /* check if any commands need a tick to do their next bit */
+      tick_command(&in_queue, &out_queue);
+      /* reset the counter */
+      tick_check_counter = 0;
+    }
+    else /* now check the tick */
+    {
+      /* dont check yet */
+      tick_check_counter++;
+    }
+    
     
   } /* for */
     
+  return(0);
+  
 } /* main */
 
 #ifdef DEBUG_MCP_IF
 void inject_test_messages(void)
 {
-  const char *test_message = "PING\nSHUTDOWN\nTIME\nDATE\nCPAGE 5 8\nRESET\n";
+  /* ASSUMES STORING DATA AT START OF QUEUE */
   
-  /* push in message to test command processor */
-  memcpy(in_queue.data, test_message, strlen(test_message));
-  in_queue.store_next_byte = strlen(test_message);
+  /* const char *test_message = "HELP\nHGHGG\nHELP PING\nHELP SHUTDOWN\nHELP TIME\nHELP DATE\nHELP RESET\nHELP HELP\nHELP REBOOT\n"; */
+  /* const char *test_message = "CALLOC 5 1\nPILALLOC 1 /home/twri/Dev/retro/Amstrad/mcp/rpi_c/run_mcp_pi.sh\nRALLOC 1 0\n\nPISALLOC 1 /home/twri/Dev/retro/Amstrad/mcp/rpi_c/delete_me_save_test.sh 37\n"; */
+  /* const char *test_message = "HELP\nHELP CALLOC\nHELP FALLOC\nHELP RALLOC\nHELP SALLOC\nHELP IALLOC\nHELP XALLOC\nHELP PILALLOC\nHELP PISALLOC\n"; */
+  
+  /* turn on debug by default */
+  TRON = TRUE;
+  
+  
+  /* QUEUE_SIZE 131070 */
+  /*
+  in_queue.read_next_byte   = 131068;
+  in_queue.store_next_byte  = 131068;
+  out_queue.read_next_byte  = 131068;
+  out_queue.store_next_byte = 131068;
+  */
+  
+  const char *test_message  = "PING\n";
+  const char *test_message2 = "TIME\n";
+  const char *test_message3 = "DATE\n";
+  const char *test_message4 = "SHUTDOWN\n";
+  const char *test_message5 = "REBOOT\n";
+
+  inject_command(&in_queue, test_message,  TextCommand); 
+  inject_command(&in_queue, test_message2, TextCommand);  
+  inject_command(&in_queue, test_message3, TextCommand);  
+  inject_command(&in_queue, test_message4, TextCommand);  
+  inject_command(&in_queue, test_message5, TextCommand);  
+  
+  /*
+  const char *test_message   = "CALLOC 5 1\n";
+  const char *test_message2  = "SALLOC 1 0\n";
+  const char *test_message3  = "RALLOC 1 0\n";
+
+  printf("Injecting Message into in_queue\n");
+  inject_command(&in_queue, test_message,   TextCommand); 
+  inject_command(&in_queue, test_message2,  TextCommand); 
+  inject_binary_data(&in_queue, "Some Test Data\n",  BinaryData, 1024); 
+  inject_command(&in_queue, test_message3,  TextCommand); 
+  */
+  
+  print_in_queue(0, 1200);
+  
+  printf("\n\n");
 }
 
-void process_any_injected_commands(void)
+void inject_command(Queue *in_queue, const char *message, PacketType packet_type)
 {
-  Command commandID = Unknown;
-  BYTE command_string[COMMAND_NAME_LENGTH];
-  
-  /* sleep(1); */
-  
-  if( is_command_available( &in_queue ) == TRUE )
+  /* packet start delimiters */
+  for(int x = 0; x < 3; x++)
   {
-    printf("Command Received\n");
-    /* get the text string of the command name*/
-    get_command_string(&in_queue, command_string);
-    printf("Got command string '%s'\n", command_string);
-    /* get the command id from the command_string */                   
-    commandID = get_commandID_from_string( command_string );
-    printf("Got command ID %d\n",commandID);
-    /* begin execution of its first segment  */        
-    process_command(commandID, &in_queue, &out_queue);
+    store_to_current_write_byte(in_queue, '+');
+    increment_store_next_index(in_queue, 1);
+  }
+  /* low byte packet_size */
+  store_to_current_write_byte(in_queue, strlen(message) + FRONT_PACKET_OVERHEAD);
+  increment_store_next_index(in_queue, 1);
+  /* high byte packet_size */
+  store_to_current_write_byte(in_queue, 0);
+  increment_store_next_index(in_queue, 1);
+  /* command packet type */  
+  store_to_current_write_byte(in_queue, packet_type);
+  increment_store_next_index(in_queue, 1);
+  /* store the packet body */
+  for(int x = 0; x < strlen(message); x++)
+  {
+    store_to_current_write_byte(in_queue, message[x]);
+    increment_store_next_index(in_queue, 1);
+  }
+  /* packet terminator delimiters */
+  for(int x = 0; x < 3; x++)
+  {
+    store_to_current_write_byte(in_queue, '-');
+    increment_store_next_index(in_queue, 1);
   }
 }
+
+void inject_binary_data(Queue *in_queue, const char *message, PacketType packet_type, int page_size)
+{
+  /* packet start delimiters */
+  for(int x = 0; x < 3; x++)
+  {
+    store_to_current_write_byte(in_queue, '+');
+    increment_store_next_index(in_queue, 1);
+  }
+  /* low byte packet_size */
+  store_to_current_write_byte(in_queue, (page_size + FRONT_PACKET_OVERHEAD) % 256);
+  increment_store_next_index(in_queue, 1);
+  /* high byte packet_size */
+  store_to_current_write_byte(in_queue, (page_size + FRONT_PACKET_OVERHEAD) / 256);
+  increment_store_next_index(in_queue, 1);
+  /* command packet type */  
+  store_to_current_write_byte(in_queue, packet_type);
+  increment_store_next_index(in_queue, 1);
+  /* store the packet body */
+  for(int x = 0; x < strlen(message); x++)
+  {
+    store_to_current_write_byte(in_queue, message[x]);
+    increment_store_next_index(in_queue, 1);
+  }
+  for(int x = 0; x < (page_size - strlen(message)); x++)
+  {
+    store_to_current_write_byte(in_queue, 0);
+    increment_store_next_index(in_queue, 1);
+  }
+  /* packet terminator delimiters */
+  for(int x = 0; x < 3; x++)
+  {
+    store_to_current_write_byte(in_queue, '-');
+    increment_store_next_index(in_queue, 1);
+  }
+}
+
 #endif

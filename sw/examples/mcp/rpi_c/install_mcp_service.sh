@@ -1,9 +1,9 @@
 #!/bin/bash
 
-cd /home/pi/mcp_pi
-
-echo "Compile MCP_pi"
+echo "Compile mcp_pi"
+make clean
 make
+cp ./run_mcp_pi.sh /home/pi/mcp_pi/
 echo "Copying MCP.Service to systemd"
 chmod +x mcp.service
 sudo chown root:root mcp.service

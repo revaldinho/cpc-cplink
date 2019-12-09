@@ -1,6 +1,6 @@
 // main.c - reset command demo for the CPC-CPLink board
 //
-// Copyright (C) 2019  Revaldinho
+// Copyright (C) 2019  Revaldinho/Shifters74
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@
 /* define functions below as main MUST be first function!! */
 void send_command_to_pi(uint8_t *command);
 void read_response_from_pi(uint8_t *response);
+uint8_t get_byte_from_pi(void);
 
 void main ( void ) 
 {
@@ -72,33 +73,82 @@ void send_command_to_pi(uint8_t *command)
 		counter++;
 	}
 	
+	/* send the +++ delimiter */
+	fifo_out_byte('+');
+	fifo_out_byte('+');
+	fifo_out_byte('+');
+	
+	/* send the size of the command - low byte (+3 is packet over head) */
+	fifo_out_byte(counter + 3);
+
+	/* send the size of the command - high byte */
+	fifo_out_byte(0);
+	
+	/* send the packet_type */
+	fifo_out_byte(1);
+	
 	/* send the command to the pi */
 	for(uint8_t index = 0; index < counter; index++)
 	{
 		fifo_out_byte(command[ index ]);
 	}
+	
+	/* send the --- delimiter */
+	fifo_out_byte('-');
+	fifo_out_byte('-');
+	fifo_out_byte('-');	
 }
 
 void read_response_from_pi(uint8_t *response)
 {
-	uint8_t receive_byte_index = 0;
-	uint8_t did_we_get_byte = 0;
+	uint8_t index = 0;
+	uint8_t packet_header[6];
 	
-	while((receive_byte_index == 0) || ((receive_byte_index > 0) && (response[receive_byte_index - 1] != '\n')))
+	/* read the first 6 bytes */
+	while(index < 6)
 	{
-		while(did_we_get_byte == 0)
-		{
-			/* didn't get one so try again */
-			did_we_get_byte = fifo_in_byte(&response[receive_byte_index]);
-			
-		} /* while */
-
-		/* reset for potential next loop */
-		did_we_get_byte = 0;
-
-		/* increment the index into the response ready for next receive byte */
-		receive_byte_index++;
+		packet_header[index] = get_byte_from_pi();
+		index++;
+	}
+	
+	/* if we got a packet header delimiter '+++' as expected and packet type is TextCommand (1) */
+	if(packet_header[0] == '+' && packet_header[1] == '+' && packet_header[2] == '+' && packet_header[5] == 1)
+	{
+		uint16_t number_bytes = packet_header[3] + (packet_header[4] * 256) - 3; /* -3 as size includes packet header */
 		
-	} /* while */	
+		index = 0;		
+		/* read the message */
+		while(index < number_bytes)
+		{
+			response[index] = get_byte_from_pi();
+			index++;
+		}
+		
+		/* read the trailing delimiters '---' */
+		index = 0;
+		while(index < 3)
+		{
+			get_byte_from_pi();
+			index++;
+		}		
+	}
+	else
+	{
+		printf("Received malformed packet\r\n");
+	}	
 }
 
+uint8_t get_byte_from_pi(void)
+{
+	uint8_t did_we_get_byte = 0;
+	uint8_t byte_received = 0;
+	
+	while(did_we_get_byte == 0)
+	{
+		/* try and get a byte from the pi */
+		did_we_get_byte = fifo_in_byte(&byte_received);
+
+	} /* while */
+	
+	return(byte_received);
+}

@@ -3,12 +3,15 @@ How to Install
 
 To install open a shell command and enter the following
 
-1) mkdir /home/pi/mcp_pi
-2) cd mcp_pi and copy the MCP files to that directory
-3) chmod +x install_mcp_service.sh
-4) ./install_mcp_service.sh
+1) mkdir /home/pi/mcp_pi/
+2) mkdir /home/pi/sw/
+3) Get Revaldinho's repo and extract the contents of sw/ into /home/pi/sw
+4) cd ~/sw/examples/mcp/rpi_c
+5) make (will make the mcp_pi binary and move it to ~/mcp_pi/)
+6) chmod +x install_mcp_service.sh
+7) ./install_mcp_service.sh
 
-Step 4 will compile the mcp_pi executable and install the files needed for it to run as a service on the pi. 
+Step 7 will compile the mcp_pi executable and install the files needed for it to run as a service on the pi. 
 The service will then be started and details of the start shown to the terminal.
 
 The service will auto start when power is applied to the pi and the pi boots (circa 30 seconds).
