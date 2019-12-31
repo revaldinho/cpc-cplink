@@ -1,0 +1,6 @@
+Install RASM from here http://www.cpcwiki.eu/forum/programming/rasm-z80-assembler-in-beta/
+
+run the push_to_m4_cpc.sh to auto build it (and push the mcplib.bin and all ASC commands to the M4).
+
+To assemble the mcplib.s by hand type 'rasm mcplib.s -o mcplib' at the command line in the cpc_asm folder.
+
