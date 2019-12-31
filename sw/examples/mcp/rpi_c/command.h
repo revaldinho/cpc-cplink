@@ -14,29 +14,57 @@
 /* there should be an enum here for each command in the system */
 /* MaxCommands should ALWAYS be 1 more than the last command   */
 
+/*************************************************/
+/* DO NOT CHANGE THE NUMBERING OR ORDERING BELOW */
+/* YOU MAY ADD ABOVE MaxCommands ONLY            */
+/*************************************************/
+
 typedef enum CommandIDs 
 {
     Unknown  = 0,
-	Ping     = 1,
-	Shutdown = 2,
-	Time     = 3,
-	Date     = 4,
-	Reset    = 5,
-    Help     = 6,
-    Reboot   = 7,
-    Tron     = 8,
-    Troff    = 9,
-	
-	CreateAlloc    = 10,
-    FreeAlloc      = 11,
-	RetrieveAlloc  = 12,
-	StoreAlloc     = 13,
-    InsertAlloc    = 14,
-    CutAlloc       = 15,
-    LoadAlloc      = 16,
-    SaveAlloc      = 17,
-	
-	MaxCommands = 18
+    
+    /* General TextCommand Functions */
+	Ping      = 1,
+	Shutdown  = 2,
+	Time      = 3,
+	Date      = 4,
+	Reset     = 5,
+    Help      = 6,
+    Reboot    = 7,
+    Tron      = 8,
+    Troff     = 9,
+    Version   = 10,
+	WifiIP    = 11,
+    ShellExec = 12,
+    Spare2    = 13,
+    Spare3    = 14,
+    Spare4    = 15,
+    Spare5    = 16,
+    Spare6    = 17,
+    Spare7    = 18,
+    Spare8    = 19,
+    Spare9    = 20,
+
+    /* Memory BinaryCommand Functions */
+	CreateAlloc   = 21,
+    FreeAlloc     = 22,
+	RetrieveAlloc = 23,
+	StoreAlloc    = 24,
+    InsertAlloc   = 25,
+    CutAlloc      = 26,
+    LoadAlloc     = 27,
+    SaveAlloc     = 28,
+
+    /* File TextCommand Functions */
+    GetFile          = 29,
+    PutFile          = 30,
+    
+    /* File BinaryCommand Functions */
+    GetMemFile       = 31,
+    PutMemFile       = 32,
+
+    /* MUST always be last */
+	MaxCommands = 33
 	
 } Command;
 
@@ -55,11 +83,8 @@ typedef struct CommandDef
 
 extern const CommandDef command_defs[MaxCommands];
 
-/* get the command id from the command_string */                   
-Command get_commandID_from_string(char *command_string);
-
 /* this function will return a pointer to a command to run for the command id passed */
-void *get_command_function(Command command_id );
+void *get_command_function(Command command_id);
 
 /* get the tick_time for the command */
 long get_command_tick_period(Command command_id);
@@ -67,69 +92,55 @@ long get_command_tick_period(Command command_id);
 /* get the size of the out_queue typically used by the command */
 int get_command_out_queue_space_required(Command command_id);
 
+/* get the command string name from the command id */
+const char *get_command_name_from_id(Command command_id);
+
+/************************************************************/
+/*                                                          */
+/* Functions for working with Text Commands                 */
+/*                                                          */
+/************************************************************/
+
+/* get the command id from the command_string */                   
+Command get_commandID_from_string(char *command_string);
+
 /* get the text string of the command name */
-void get_command_string(Queue *in_queue, char *command_string);
+BOOL get_command_text(Queue *in_queue, char *command_string);
 
-/* these are the commands supported by MCP                    */
-/* the return value is TRUE if the command has completed      */
-/* FALSE if it has not completed                              */
+/* this function reads the queue for a parameter (space seperated) */	
+BOOL get_command_next_param_text(Queue *in_queue, char *param_found_text, int max_size_of_param, BOOL nl_terminated);
 
-/* the function signature must stay the same for all commands */
+/* this function reads the queue for all parameters in the command e.g. for shell usage */	
+BOOL get_all_command_params_text(Queue *in_queue, char *param_found_text, int max_size_of_param);
 
-/********************************************************************/
-/*                                                                  */
-/* Functions providing the command services                         */
-/*                                                                  */
-/********************************************************************/
+/************************************************************/
+/*                                                          */
+/* Functions for working with Binary Commands               */
+/*                                                          */
+/************************************************************/
 
-/* simple built in commands for basic services */
-BOOL command_unknown(Queue *in_queue, Queue *out_queue, int tick);
-BOOL command_ping(Queue *in_queue, Queue *out_queue, int tick);
-BOOL command_shutdown(Queue *in_queue, Queue *out_queue, int tick);
-BOOL command_time(Queue *in_queue, Queue *out_queue, int tick);
-BOOL command_date(Queue *in_queue, Queue *out_queue, int tick);
-BOOL command_reset(Queue *in_queue, Queue *out_queue, int tick);
-BOOL command_help(Queue *in_queue, Queue *out_queue, int tick);
-BOOL command_reboot(Queue *in_queue, Queue *out_queue, int tick);
-BOOL command_tron(Queue *in_queue, Queue *out_queue, int tick);
-BOOL command_troff(Queue *in_queue, Queue *out_queue, int tick);
+/* get the commandID binary from the packet body */
+Command get_command_bin(Queue *in_queue);
 
-/* these commands control moving memory in/out of the CPC to/from the pi */
-BOOL command_create_alloc(Queue *in_queue, Queue *out_queue, int tick);
-BOOL command_free_alloc(Queue *in_queue, Queue *out_queue, int tick);
-BOOL command_retrieve_alloc(Queue *in_queue, Queue *out_queue, int tick);
-BOOL command_store_alloc(Queue *in_queue, Queue *out_queue, int tick);
-BOOL command_insert_alloc(Queue *in_queue, Queue *out_queue, int tick);
-BOOL command_cut_alloc(Queue *in_queue, Queue *out_queue, int tick);
-BOOL command_load_alloc(Queue *in_queue, Queue *out_queue, int tick);
-BOOL command_save_alloc(Queue *in_queue, Queue *out_queue, int tick);
+/* this function reads the queue for the next binary parameter */	
+int get_command_next_8bit_param_bin(Queue *in_queue);
 
-/********************************************************************/
-/*                                                                  */
-/* Help Functions for the command services                          */
-/*                                                                  */
-/********************************************************************/
+/* this function reads the queue for the next binary parameter */	
+int get_command_next_16bit_param_bin(Queue *in_queue);
 
-/* simple built in commands help for basic services */
-BOOL command_unknown_help(Queue *in_queue, Queue *out_queue);
-BOOL command_ping_help(Queue *in_queue, Queue *out_queue);
-BOOL command_shutdown_help(Queue *in_queue, Queue *out_queue);
-BOOL command_time_help(Queue *in_queue, Queue *out_queue);
-BOOL command_date_help(Queue *in_queue, Queue *out_queue);
-BOOL command_reset_help(Queue *in_queue, Queue *out_queue);
-BOOL command_help_help(Queue *in_queue, Queue *out_queue);
-BOOL command_reboot_help(Queue *in_queue, Queue *out_queue);
-BOOL command_tron_help(Queue *in_queue, Queue *out_queue);
-BOOL command_troff_help(Queue *in_queue, Queue *out_queue);
+/* this function reads the queue for the next binary parameter */	
+int get_command_next_32bit_param_bin(Queue *in_queue);
 
-/* help for commands that control moving pages of memory in/out of the CPC to/from the pi */
-BOOL command_create_alloc_help(Queue *in_queue, Queue *out_queue);
-BOOL command_free_alloc_help(Queue *in_queue, Queue *out_queue);
-BOOL command_retrieve_alloc_help(Queue *in_queue, Queue *out_queue);
-BOOL command_store_alloc_help(Queue *in_queue, Queue *out_queue);
-BOOL command_insert_alloc_help(Queue *in_queue, Queue *out_queue);
-BOOL command_cut_alloc_help(Queue *in_queue, Queue *out_queue);
-BOOL command_load_alloc_help(Queue *in_queue, Queue *out_queue);
-BOOL command_save_alloc_help(Queue *in_queue, Queue *out_queue);
+/************************************************************/
+/*                                                          */
+/* Functions for working with Help Commands                 */
+/*                                                          */
+/************************************************************/
+
+/* add up the length of the array of strings */
+int size_of_string_array(char **text_array);
+
+/* write out an array of text for help commands */
+BOOL write_out_help_text_array(Queue *queue, char **help_text_array);
 
 #endif

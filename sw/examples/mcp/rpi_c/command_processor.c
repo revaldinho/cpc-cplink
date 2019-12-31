@@ -21,7 +21,7 @@ void command_processor_init(void)
 }
 
 /* process the specified text command */
-BOOL process_text_command(Command command_id, Queue *in_queue, Queue *out_queue)
+BOOL process_command(Command command_id, Queue *in_queue, Queue *out_queue)
 {
 	BOOL (*return_function)(Queue *, Queue *, int) = get_command_function(command_id);	
 	int output_space_required = get_command_out_queue_space_required(command_id);
@@ -72,6 +72,16 @@ BOOL process_text_command(Command command_id, Queue *in_queue, Queue *out_queue)
 				/* we could not check for it above as we do for other commands hence why we have to handle it here */
 				/* we will return FALSE which will cause the command to be 'unread' in the in_queue so that it can */
 				/* be tried again later maybe when the out_queue is not so full                                    */
+				
+				return(FALSE);
+			}
+			/* if the command was to run a shell command and it failed to complete */
+			else if(command_id == ShellExec)
+			{
+				/* we failed to complete due to out_queue being full and as the command is based on the shell return */
+				/* we could not check the size above as we do for other commands hence why we have to handle it here */
+				/* we will return FALSE which will cause the command to be 'unread' in the in_queue so that it can   */
+				/* be tried again later maybe when the out_queue is not so full                                      */
 				
 				return(FALSE);
 			}

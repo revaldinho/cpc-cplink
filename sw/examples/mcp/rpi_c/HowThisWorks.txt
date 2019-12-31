@@ -1,4 +1,4 @@
-How to Install
+How to Install 
 ==============
 
 To install open a shell command and enter the following

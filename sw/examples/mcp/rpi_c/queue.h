@@ -7,15 +7,15 @@
 #ifndef QUEUE_H
 #define QUEUE_H 1
 
-/* size of the data for each queue */
-#define QUEUE_SIZE 131070
-
 /* typedefs which the compiler does not seem to have for some weird reason */
 typedef unsigned char BYTE;
 typedef unsigned char BOOL;
 
 #define FALSE 0
 #define TRUE 1
+
+/* size of the data for each queue */
+#define QUEUE_SIZE 131070
 
 typedef struct Queue 
 {
@@ -40,6 +40,9 @@ BOOL get_data_from_queue(Queue *queue, BYTE *data, int number_of_bytes_required)
 /* this function will try and write data to the queue    */
 /* return value is TRUE if data is written to the queue  */
 BOOL write_data_to_queue(Queue *queue, BYTE *data, int size_of_data);
+
+/* write the byte of data to the queue */
+BOOL write_byte_of_data_to_queue(Queue *queue, BYTE data_byte);
 
 /* is there space in the queue for x bytes */
 BOOL is_queue_space_available(Queue *queue, int space_required);

@@ -31,7 +31,7 @@ typedef struct Command_State
 void command_processor_init(void);
 
 /* process the specified text command */
-BOOL process_text_command(Command command_id, Queue *in_queue, Queue *out_queue);
+BOOL process_command(Command command_id, Queue *in_queue, Queue *out_queue);
 
 /* check to see if any command has another step to perform */
 void tick_command( Queue *in_queue, Queue *out_queue );
@@ -44,6 +44,5 @@ long get_next_exec_time(Command command_id);
 	
 /* get the current time in microseconds */
 long get_current_exec_time(void);
-
 	
 #endif

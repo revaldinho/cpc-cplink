@@ -48,6 +48,9 @@ void main ( void )
 			 "HELP REBOOT\n",
 			 "HELP TRON\n",
 			 "HELP TROFF\n",
+			 "HELP VERSION\n",
+			 "HELP WIFI\n",
+			 "HELP SHELLEXEC\n",
 			 "HELP CALLOC\n",
 			 "HELP FALLOC\n",
 			 "HELP RALLOC\n",
@@ -56,6 +59,10 @@ void main ( void )
 			 "HELP XALLOC\n",
 			 "HELP PISALLOC\n",
 			 "HELP PILALLOC\n",
+			 "HELP GETFILE\n",
+			 "HELP PUTFILE\n",
+			 "HELP GETMEMFILE\n",
+			 "HELP PUTMEMFILE\n",
 			 NULL};
 	
 	clear_buffer(response);

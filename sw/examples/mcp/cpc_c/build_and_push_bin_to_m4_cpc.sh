@@ -59,14 +59,20 @@ declare -a command_list=(
     "time" 
     "troff" 
     "tron" 
+    "version"
+    "wifiip"
 )
 
+echo "Creating commands.dsk"
+
+iDSK cpcc.dsk -n
 
 for command in "${command_list[@]}"
 do
     echo "Building ${command}.bin"
     pushd $command
     make  
+    iDSK ../cpcc.dsk -i obj/${command}.bin -t 1 -e 0x4000 -c 0x4000
     echo "Sending ${command}.bin file to M4 on CPC"
     xfer -u ${ip_addr} obj/${command}.bin ${target_dir} 2 0x4000 0x4000
     rm -rf *cdt *dsk obj/

@@ -24,104 +24,123 @@
 #include <firmware.h>
 #include <fifolib.h>
 
-#define RESPONSE_LENGTH 2048
+#define OUTPUT_BUFFER_LENGTH 255
+#define RESPONSE_BUFFER_LENGTH 2048
 
 /* define functions below as main MUST be first function!! */
-void send_command_to_pi(const uint8_t *command);
+void send_bytes_to_pi(uint8_t *data, uint8_t size_to_send);
 void read_response_from_pi(uint8_t *response);
 uint8_t get_byte_from_pi(void);
-void read_binary_data_from_pi(uint8_t *memory_buffer, uint16_t number_bytes_to_read);
-void send_binary_data_to_pi(const uint8_t *memory_buffer, uint16_t number_bytes_to_write);
-void copy_message_into_buffer(uint8_t *memory_buffer, const uint8_t *change_text, uint16_t position_to_add);
-void clear_buffer(uint8_t *memory_buffer);
+void read_binary_data_from_pi(uint8_t *response_buffer, uint16_t number_bytes_to_read);
+void send_binary_data_to_pi(const uint8_t *response_buffer, uint16_t number_bytes_to_write);
+void copy_message_into_buffer(uint8_t *response_buffer, const uint8_t *change_text, uint16_t position_to_add);
+void clear_buffer(uint8_t *response_buffer, uint16_t size_of_buffer);
 
 void main ( void ) 
 {
 	const uint8_t *command = NULL;
 	const uint8_t *change_text = NULL;
-	uint8_t *memory_buffer = (uint8_t *) 0x8000;  /* memory area on the CPC we will use */
-	
+	uint8_t *output_buffer = (uint8_t *) 0x8000;  /* memory area to build message */
+	uint8_t *response_buffer = (uint8_t *) 0x8100;  /* memory area tp hold response */
+	const uint8_t *file_name = "/home/pi/mcp_pi/run_mcp_pi.sh\n";
+	const uint8_t *new_file_name = "/home/pi/mcp_pi/delete_me_save_test.sh\n";
+	const uint8_t *new_file_name2 = "/home/pi/mcp_pi/delete_me_save_test2.sh\n";
+	const uint8_t *new_file_name3 = "/home/pi/mcp_pi/delete_me_save_test3.sh\n";
+
 	/* set screen mode 2 */
 	scr_set_mode(2);
 
 	/* reset the fifo queue */
 	fifo_reset();
 
-	/* clear the buffer */
-	clear_buffer( memory_buffer );
-	
 	/***********************************/
 	/* Create a memory allocation on   */
 	/* the raspberry pi                */
 	/***********************************/
 
-	/* format of request:                                  */
-	/* CALLOC NUMBER_PAGES SIZE_OF_PAGE_IN_KB\n            */
-	/* example:                                            */
-	/* CALLOC 5 8\n which requests 5 x 8KB of memory       */
-	/* MAX NUMBER_PAGES is 9999                            */
-	/* MAX SIZE_OF_PAGE_IN_KB is 32                        */
-	/* return values:                                      */
-	/* CALLOC ERROR 1\n when parameters are incorrect      */
-	/* CALLOC ERROR 2\n when pi can't allocate memory      */
-	/* CALLOC ALLOCATION_ID\n when complete successfully   */
-	/* The ALLOCATION_ID is a positive int (1..20)         */
-	
-	command = "CALLOC 8 1\n";
-	
-	/* send the command to the pi */
-	send_command_to_pi(command);	
-	printf("Sent: %s\r\n",command);
-	
+	/* format of request:                                   */
+	/* CALLOC NUM_PAGES SIZE_OF_PAGES                       */
+	/* CALLOC (1 byte) value 21                             */
+    /* NUM_PAGEs (2 bytes) range 1 to 9999                  */
+    /* SIZE_OF_PAGES_IN_KB (1 byte) range 1 to 32           */
+	/* example:                                             */
+    /* 21 05 00 01                                          */
+    /* where 05 + (00 << 8) is 5 pages of 8KB               */
+
 	/* clear the buffer */
-	clear_buffer( memory_buffer );
+	clear_buffer(output_buffer, OUTPUT_BUFFER_LENGTH);
+	clear_buffer(response_buffer, RESPONSE_BUFFER_LENGTH);
 	
+	printf("CAllOC \r\n");
+
+	/* command id */
+	output_buffer[0] = 21;
+	/* number of pages lo/high */
+	output_buffer[1] = 5;
+	output_buffer[2] = 0;
+	/* size of page to create (in KB) */
+	output_buffer[3] = 1;
+
+	/* send the command to the pi */
+	send_bytes_to_pi(output_buffer, 4);
+
+	/* format of response:                                  */
+	/* CALLOC ALLOC_ID ERROR_ID                             */ 
+    /* CALLOC 21 (1 byte)                                   */
+    /* ALLOC_ID (1 byte) range 0 to 20                      */
+    /* ALLOC_ID value 0 means error occured                 */
+    /* ERROR_ID (1 byte) range 0 to 2                       */
+	/* ERROR_ID value 0 no error occured                    */
+	/* ERROR_ID value 1 when parameters are incorrect       */
+	/* ERROR_ID value 2 when pi can't allocate memory       */
+
 	/* read the response from the pi */
-	read_response_from_pi(memory_buffer);
-    printf("Response: %s\r\n",memory_buffer);
-	/* response CALLOC 1\n meaning memory allocation 1 created which consists of 8 pages (starting from 0) of 1K memory on the pi */
-	
-	printf("\r\nPress any key to continue\r");
-	printf("\r\n");
-	printf("\r\n");	
-	
-	km_wait_char();
+	read_response_from_pi(response_buffer);
 
 	/***********************************/
 	/* Load in a file on the pi into   */
 	/* the memory allocated            */
 	/***********************************/
 		
-	/* format of request:                                     */
-	/* PILALOC ALLOCATION_ID /PATH/FILENAME\n                 */
-	/* example:                                               */
-	/* PILALOC 1 /home/pi/mcp_pi/HowThisWorks.txt\n           */
-	/* return values:                                         */
-	/* PILALOC ALLOCATION_ID FILE_SIZE\n                      */
-	/* PILALOC ERROR 1\n when parameters are incorrect        */
-	/* PILALOC ERROR 2\n unable to load file                  */
-	/* PILALOC ERROR 3\n file to large to fit in memory       */
-	/*                    allocation                          */
-	
-	command = "PILALLOC 1 /home/pi/mcp_pi/run_mcp_pi.sh\n";
-	
-	/* send the command to the pi */
-	send_command_to_pi(command);	
-	printf("Sent: %s\r\n",command);
-	
+	/* format of request:                                  */
+	/* PILALLOC ALLOC_ID /PATH/TO/FILENAME\n               */
+	/* PILALLOC (1 byte) value 27                          */
+	/* ALLOC_ID (1 byte) range 1 to 20                     */
+	/* /PATH/TO/FILENAME is a string filename path  with   */
+	/* \n termination                                      */
+
 	/* clear the buffer */
-	clear_buffer( memory_buffer );
+	clear_buffer(output_buffer, OUTPUT_BUFFER_LENGTH);
+	clear_buffer(response_buffer, RESPONSE_BUFFER_LENGTH);
 	
+	printf("PILAllOC \r\n");
+	
+	/* command id */
+	output_buffer[0] = 27;
+	/* use memory allocation 1 (created above) */
+	output_buffer[1] = 1;
+	/* copy the path to file into the memory buffer */
+    copy_message_into_buffer(&output_buffer[2], file_name, 0);
+
+	/* send the command to the pi (30 is size of path and filename) */
+	send_bytes_to_pi(output_buffer, 2 + 30);
+
+	/* format of response:                                 */
+	/* PILALLOC ALLOC_ID FILE_SIZE ERROR_ID                */
+	/* PILALLOC (1 byte) value 27                          */
+	/* ALLOC_ID (1 byte) range 0 to 20                     */
+    /* ALLOC_ID value 0 means error occured                */
+    /* ALLOC_ID value 1 to 20 alloc_id to be modified      */
+	/* FILE_SIZE (4 byte) range 0 to sizeof(int)           */
+	/*   format high16bit(lo/high) low16bit(lo/high)       */
+    /* ERROR_ID (1 byte) range 0 to 3                      */
+	/* ERROR_ID value 0 no error occured                   */
+	/* ERROR_ID value 1 when parameters are incorrect      */
+	/* ERROR_ID value 2 unable to load file                */
+	/* ERROR_ID value 3 file to large to fit allocation    */
+
 	/* read the response from the pi */
-	read_response_from_pi(memory_buffer);
-    printf("Response: %s\r\n",memory_buffer);
-	/* response PILALOC 1 37\n meaning the pi read 37 bytes into the memory allocation 1 (starting at page 0) */
-	
-	printf("\r\nPress any key to continue\r");
-	printf("\r\n");
-	printf("\r\n");	
-	
-	km_wait_char();
+	read_response_from_pi(response_buffer);
 
 	/***********************************/
 	/* Retrieve page 0 of the memory   */
@@ -131,37 +150,47 @@ void main ( void )
 	/***********************************/
 
 	/* format of request:                                */
-	/* RALLOC ALLOCATION_ID PAGE_NUMBER\n                */
-	/* example:                                          */
-	/* RALLOC 1 0\n which retrieve the first page(from 0)*/
-	/* for memory in allocation_id 1                     */
-	/* return values:                                    */
-	/* RALLOC OK 1 0\n                                   */
-	/* The binary data is the number of KB you specified */
-	/* in your CALLOC command and follows in the next    */
-    /* packet                                            */
-	/* RALLOC ERROR 1\n when parameters are incorrect    */
-	
-	command = "RALLOC 1 0\n";
-	
-	/* send the command to the pi */
-	send_command_to_pi(command);	
-	printf("Sent: %s\r\n",command);
-	
+	/* RALLOC ALLOC_ID PAGE_NUMBER                       */
+	/* RALLOC (1 byte) value 23                          */
+	/* ALLOC_ID (1 byte) range 1 to 20                   */
+	/* PAGE_NUMBER (2 bytes lo/high) value 0 to 9999     */
+
 	/* clear the buffer */
-	clear_buffer( memory_buffer );
+	clear_buffer(output_buffer, OUTPUT_BUFFER_LENGTH);
+	clear_buffer(response_buffer, RESPONSE_BUFFER_LENGTH);
 	
+	printf("RAllOC \r\n");
+	
+	/* command id */
+	output_buffer[0] = 23;
+	/* use memory allocation 1 (created above) */
+	output_buffer[1] = 1;
+	/* retrieve page number (low/high byte) */
+	output_buffer[2] = 0; /* page 0 */
+	output_buffer[3] = 0;
+
+	/* send the command (of 4 bytes) to the pi */
+	send_bytes_to_pi(output_buffer, 4);
+
+	/* format of response:                               */
+	/* RALLOC ALLOC_ID PAGE_NUMBER ERROR_ID              */
+	/* RALLOC (1 byte) value 23                          */
+	/* ALLOC_ID (1 byte) range 0 to 20                   */
+    /* ALLOC_ID value 0 means error occured              */
+    /* ALLOC_ID value 1 to 20 alloc_id retreiving ok     */
+	/*          A BinaryData packet of PAGE_NUMBER data  */
+	/*          will follow this response packet.        */
+	/* PAGE_NUMBER (2 bytes lo/high) value 0 to 9999     */
+	/*          The page number retrieved                */
+    /* ERROR_ID (1 byte) range 0 to 1                    */
+	/* ERROR_ID value 0 no error occured                 */
+	/* ERROR_ID value 1 when parameters are incorrect    */
+
 	/* read the response from the pi */
-	read_response_from_pi(memory_buffer);    
-	printf("Response: %s\r\n",memory_buffer);
-	
-	/* response RALLOC OK 1 0\n meaning we requested memory page 0 from memory allocation 1 and got it (the OK bit ) */	
-	
-	/* clear the buffer */
-	clear_buffer( memory_buffer );
-	
+	read_response_from_pi(response_buffer);
+
 	/* now read the binary data which is 1K in size */
-	read_binary_data_from_pi(memory_buffer,1024);
+	read_binary_data_from_pi(response_buffer, 1024);
 	
 	/* response is 1K of binary data (the size of each page specified in the CALLOC command) */
 	
@@ -169,7 +198,7 @@ void main ( void )
 	/* page even if its only part of a page containing the data - you must get the whole page */
 	
 	/* print the response as its a text file with null terminated string */
-	printf("BinReceive: %s\r\n", memory_buffer);
+	printf("BinReceive: %s\r\n", response_buffer);
 
 	printf("\r\nPress any key to continue\r");
 	printf("\r\n");
@@ -182,9 +211,9 @@ void main ( void )
 	/*********************************************/
 
 	change_text = "echo \"We Changed This!\"";
-	copy_message_into_buffer(memory_buffer, change_text, 37);
+	copy_message_into_buffer(response_buffer, change_text, 37);
 	
-	printf("Changed 1K page to: %s\r\n", memory_buffer);
+	printf("Changed 1K page to: %s\r\n", response_buffer);
 	
 	/* we copied the change text into the memory buffer starting at the position 37 */
 	
@@ -199,446 +228,614 @@ void main ( void )
 	/* updated back to the pi                    */
 	/*********************************************/
 
-	/* format of request:                                     */
-	/* SALLOC ALLOCATION_ID PAGE_NUMBER\n                     */
-	/* example:                                               */
-	/* SALLOC 1 0\n                                           */
-    /*   BINARY_DATA follows in the next packet where the     */
-    /*   length of BINARY_DATA is the page size used in       */       
-    /*   CALLOC creation                                      */
-	/* return values:                                         */
-	/* SALLOC OK ALLOCATION_ID PAGE_NUMBER\n                  */
-	/* e.g. SALLOC OK 1 0\n                                   */
-	/* SALLOC ERROR 1\n when parameters are incorrect         */
+	/* format of request:                                  */
+	/* SALLOC ALLOC_ID PAGE_NUMBER                         */
+	/* SALLOC (1 byte) value 24                            */
+	/* ALLOC_ID (1 byte) range 1 to 20                     */
+	/* PAGE_NUMBER (2 bytes lo/high) value 0 to 9999       */
+
+	/* clear the buffer */
+	clear_buffer(output_buffer, OUTPUT_BUFFER_LENGTH);
 	
-	command = "SALLOC 1 0\n";
+	printf("SAllOC \r\n");
 	
-	/* send the command to the pi */
-	send_command_to_pi(command);
-	printf("Sent: %s\r\n",command);
-	/* meaning we are writing page 0 of memory allocation 1 back */
-	
-	/* send the binary data to the pi */
-	send_binary_data_to_pi(memory_buffer, 1024);
-	
-	printf("BinSent: %s\r\n", memory_buffer);
-	
+	/* command id */
+	output_buffer[0] = 24;
+	/* use memory allocation 1 (created above) */
+	output_buffer[1] = 1;
+	/* store page number (low/high byte) */
+	output_buffer[2] = 0; /* page 0 */
+	output_buffer[3] = 0;
+
+	/* send the command (of 4 bytes) to the pi */
+	send_bytes_to_pi(output_buffer, 4);
+
 	/* when you send a page of data you must send the whole page of data back to the pi even if only modifying a small part of it */
 	/* sending this page has no affect on the other pages in the memory allocation 1 on the pi                                    */
 	
-	
-	/* clear the buffer */
-	clear_buffer( memory_buffer );
-	
-	/* read the response from the pi */
-	read_response_from_pi(memory_buffer);
-	
-    printf("Response: %s\r\n",memory_buffer);
-	/* response SALLOC OK 1 0\n meaning we sent page 0 of memory allocation 1 back successfully (the OK bit) */
-	
-	printf("\r\nPress any key to continue\r");
-	printf("\r\n");
-	printf("\r\n");	
-	
-	km_wait_char();
-
-	/*********************************************/
-	/* Now save the memory allocation on the pi  */
-	/* to a file on the pi (with our changes)    */
-	/*********************************************/
-	
-	/* format of request:                                       */
-	/* PISALLOC ALLOCATION_ID /PATH/FILENAME FILESIZE\n         */
-	/* FILESIZE is size you want to save from memory allocation */
-	/* example:                                                 */
-	/* PISALLOC 1 /home/pi/mcp_pi/HowThisWorks.txt 4086\n       */
-	/* return values:                                           */
-	/* PISALLOC ALLOCATION_ID OK\n                              */
-	/* PILALOC ERROR 1\n parameter error                        */
-	/* PILALOC ERROR 2\n unable to write to file                */
-	
-	command = "PISALLOC 1 /home/pi/mcp_pi/delete_me_save_test.sh 60\n";
-	
-	/* send the command to the pi */
-	send_command_to_pi(command);	
-	printf("Sent: %s\r\n",command);
-	
-	/* clear the buffer */
-	clear_buffer( memory_buffer );
-	
-	/* read the response from the pi */
-	read_response_from_pi(memory_buffer); 
-    printf("Response: %s\r\n",memory_buffer);
-	/* response PISALLOC 1 OK\n meaning we saved memory allocation 1 successfully to the file specified - now check on the pi that this is true! */
-	
-	printf("\r\nPress any key to continue\r");
-	printf("\r\n");
-	printf("\r\n");	
-	
-	km_wait_char();
-
-	/***********************************/
-	/* Create a memory allocation on   */
-	/* the raspberry pi                */
-	/***********************************/
-
-	/* format of request:                                  */
-	/* CALLOC NUMBER_PAGES SIZE_OF_PAGE_IN_KB\n            */
-	/* example:                                            */
-	/* CALLOC 5 8\n which requests 5 x 8KB of memory       */
-	/* MAX NUMBER_PAGES is 9999                            */
-	/* MAX SIZE_OF_PAGE_IN_KB is 32                        */
-	/* return values:                                      */
-	/* CALLOC ERROR 1\n when parameters are incorrect      */
-	/* CALLOC ERROR 2\n when pi can't allocate memory      */
-	/* CALLOC ALLOCATION_ID\n when complete successfully   */
-	/* The ALLOCATION_ID is a positive int (1..20)         */
-	
-  	command = "CALLOC 2 16\n";
-	
-	/* send the command to the pi */
-	send_command_to_pi(command);	
-	printf("Sent: %s\r\n",command);
-	
-	/* clear the buffer */
-	clear_buffer( memory_buffer );
-	
-	/* read the response from the pi */
-	read_response_from_pi(memory_buffer);
-    printf("Response: %s\r\n",memory_buffer);
-	/* response CALLOC 2\n meaning memory allocation 2 created which consists of 2 pages (starting from 0) of 16K memory on the pi */
-	
-	printf("\r\nPress any key to continue\r");
-	printf("\r\n");
-	printf("\r\n");	
-	
-	km_wait_char();
-
-	/***********************************/
-	/* Load in a file on the pi into   */
-	/* the memory allocated            */
-	/***********************************/
-		
-	/* format of request:                                     */
-	/* PILALOC ALLOCATION_ID /PATH/FILENAME\n                 */
-	/* example:                                               */
-	/* PILALOC 1 /home/pi/mcp_pi/HowThisWorks.txt\n           */
-	/* return values:                                         */
-	/* PILALOC ALLOCATION_ID FILE_SIZE\n                      */
-	/* PILALOC ERROR 1\n when parameters are incorrect        */
-	/* PILALOC ERROR 2\n unable to load file                  */
-	/* PILALOC ERROR 3\n file to large to fit in memory       */
-	/*                    allocation                          */
-	
-	command = "PILALLOC 2 /home/pi/mcp_pi/run_mcp_pi.sh\n";
-	
-	/* send the command to the pi */
-	send_command_to_pi(command);	
-	printf("Sent: %s\r\n",command);
-	
-	/* clear the buffer */
-	clear_buffer( memory_buffer );
-	
-	/* read the response from the pi */
-	read_response_from_pi(memory_buffer);
-    printf("Response: %s\r\n",memory_buffer);
-	/* response PILALOC 2 37\n meaning the pi read 37 bytes into the memory allocation 1 (starting at page 0) */
-	
-	printf("\r\nPress any key to continue\r");
-	printf("\r\n");
-	printf("\r\n");	
-	
-	km_wait_char();
-
-	/***********************************************/
-	/* Insert a string into the memory of the file */
-    /* on the pi in the memory allocated           */
-	/***********************************************/
-		
-  	/* format of request:                                                          */
-	/* IALLOC ALLOCATION_ID INSERT_AT INSERT_LENGTH\n                              */
-	/* example:                                                                    */
-	/* IALLOC 1 20 50\n                                                            */
-    /* Where 1 is ALLOC_ID and 20 is 20 bytes form start of ALLOC_ID memory        */
-    /* The BinaryData packet follows the sending of IALLOC containing the data to insert */
-	/* return values:                                                              */
-	/* IALLOC OK ALLOCATION_ID\n                                                   */
-	/* IALLOC ERROR 1\n when parameters are incorrect                              */
-	/* IALLOC ERROR 2\n unable to allocate memory on pi                            */
-	/* IALLOC ERROR 3\n insert_at beyond end of allocation memory                  */
-
-    command = "IALLOC 2 12 12\n";
-	
-	/* send the command to the pi */
-	send_command_to_pi(command);
-	printf("Sent: %s\r\n",command);
-	/* meaning we are writing page 0 of memory allocation 1 back */
-	
 	/* send the binary data to the pi */
-	send_binary_data_to_pi("Hello World\n", 12);
+	send_binary_data_to_pi(response_buffer, 1024);
 	
-	printf("BinSent: Hello World\\n\r\n");
-	
-	/* when you send a page of data you must send the whole page of data back to the pi even if only modifying a small part of it */
-	/* sending this page has no affect on the other pages in the memory allocation 1 on the pi                                    */
-	
+	/* format of response:                                 */
+	/* SALLOC ALLOC_ID PAGE_NUMBER ERROR_ID                */
+	/* SALLOC (1 byte) value 24                            */
+	/* ALLOC_ID (1 byte) range 0 to 20                     */
+    /* ALLOC_ID value 0 means error occured                */
+    /* ALLOC_ID value 1 to 20 alloc_id to be stored        */
+	/* PAGE_NUMBER (2 bytes lo/high) value 0 to 9999       */
+	/*          The page stored                            */
+    /* ERROR_ID (1 byte) range 0 to 1                      */
+	/* ERROR_ID value 0 no error occured                   */
+	/* ERROR_ID value 1 when parameters are incorrect      */
+
 	/* clear the buffer */
-	clear_buffer( memory_buffer );
+	clear_buffer(response_buffer, RESPONSE_BUFFER_LENGTH);
 	
 	/* read the response from the pi */
-	read_response_from_pi(memory_buffer);
+	read_response_from_pi(response_buffer);
 	
-    printf("Response: %s\r\n",memory_buffer);
-	/* response IALLOC OK 2\n meaning we sent page 0 of memory allocation 1 back successfully (the OK bit) */
-	
-	printf("\r\nPress any key to continue\r");
-	printf("\r\n");
-	printf("\r\n");	
-	
-	km_wait_char();
-
 	/*********************************************/
 	/* Now save the memory allocation on the pi  */
 	/* to a file on the pi (with our changes)    */
 	/*********************************************/
 	
+
 	/* format of request:                                       */
-	/* PISALLOC ALLOCATION_ID /PATH/FILENAME FILESIZE\n         */
-	/* FILESIZE is size you want to save from memory allocation */
-	/* example:                                                 */
-	/* PISALLOC 1 /home/pi/mcp_pi/HowThisWorks.txt 4086\n       */
-	/* return values:                                           */
-	/* PISALLOC ALLOCATION_ID OK\n                              */
-	/* PILALOC ERROR 1\n parameter error                        */
-	/* PILALOC ERROR 2\n unable to write to file                */
-	
-	command = "PISALLOC 2 /home/pi/mcp_pi/delete_me_save_test2.sh 49\n";
-	
-	/* send the command to the pi */
-	send_command_to_pi(command);	
-	printf("Sent: %s\r\n",command);
-	
+	/* PISALLOC ALLOC_ID FILESIZE /PATH/FILENAME\n              */
+	/* PISALLOC (1 byte) value 28                               */
+	/* ALLOC_ID (1 byte) range 1 to 20                          */
+	/* FILE_SIZE (4 byte) range 0 to sizeof(int)                */
+	/*   format high16bit(lo/high) low16bit(lo/high)            */
+	/* /PATH/TO/FILENAME is a string filename path  with        */
+	/* \n termination                                           */
+
 	/* clear the buffer */
-	clear_buffer( memory_buffer );
-	
-	/* read the response from the pi */
-	read_response_from_pi(memory_buffer); 
-    printf("Response: %s\r\n",memory_buffer);
-	/* response PISALLOC 2 OK\n meaning we saved memory allocation 1 successfully to the file specified - now check on the pi that this is true! */
-	
-	printf("\r\nPress any key to continue\r");
-	printf("\r\n");
-	printf("\r\n");	
-	
-	km_wait_char();
-
-
-	/***********************************/
-	/* Create a memory allocation on   */
-	/* the raspberry pi                */
-	/***********************************/
-
-	/* format of request:                                  */
-	/* CALLOC NUMBER_PAGES SIZE_OF_PAGE_IN_KB\n            */
-	/* example:                                            */
-	/* CALLOC 5 8\n which requests 5 x 8KB of memory       */
-	/* MAX NUMBER_PAGES is 9999                            */
-	/* MAX SIZE_OF_PAGE_IN_KB is 32                        */
-	/* return values:                                      */
-	/* CALLOC ERROR 1\n when parameters are incorrect      */
-	/* CALLOC ERROR 2\n when pi can't allocate memory      */
-	/* CALLOC ALLOCATION_ID\n when complete successfully   */
-	/* The ALLOCATION_ID is a positive int (1..20)         */
-	
-  	command = "CALLOC 2 16\n";
-	
-	/* send the command to the pi */
-	send_command_to_pi(command);	
-	printf("Sent: %s\r\n",command);
-	
-	/* clear the buffer */
-	clear_buffer( memory_buffer );
-	
-	/* read the response from the pi */
-	read_response_from_pi(memory_buffer);
-    printf("Response: %s\r\n",memory_buffer);
-	/* response CALLOC 3\n meaning memory allocation 3 created which consists of 2 pages (starting from 0) of 16K memory on the pi */
-	
-	printf("\r\nPress any key to continue\r");
-	printf("\r\n");
-	printf("\r\n");	
-	
-	km_wait_char();
-
-	/***********************************/
-	/* Load in a file on the pi into   */
-	/* the memory allocated            */
-	/***********************************/
+	clear_buffer(output_buffer, OUTPUT_BUFFER_LENGTH);
+	clear_buffer(response_buffer, RESPONSE_BUFFER_LENGTH);
 		
-	/* format of request:                                     */
-	/* PILALOC ALLOCATION_ID /PATH/FILENAME\n                 */
-	/* example:                                               */
-	/* PILALOC 1 /home/pi/mcp_pi/HowThisWorks.txt\n           */
-	/* return values:                                         */
-	/* PILALOC ALLOCATION_ID FILE_SIZE\n                      */
-	/* PILALOC ERROR 1\n when parameters are incorrect        */
-	/* PILALOC ERROR 2\n unable to load file                  */
-	/* PILALOC ERROR 3\n file to large to fit in memory       */
-	/*                    allocation                          */
+	printf("PISAllOC \r\n");
 	
-	command = "PILALLOC 3 /home/pi/mcp_pi/run_mcp_pi.sh\n";
+	/* command id */
+	output_buffer[0] = 28;
+	/* use memory allocation 1 (created above) */
+	output_buffer[1] = 1;
+	/* file size to save format high16bit(lo/high) low16bit(lo/high) */
+	output_buffer[2] = 0; 
+	output_buffer[3] = 0;
+	output_buffer[4] = 60; /* save 60 bytes */
+	output_buffer[5] = 0;
+	/* copy the path to file into the memory buffer */
+    copy_message_into_buffer(&output_buffer[6], new_file_name, 0);
+
+	/* send the command to the pi 6 + size of path/filename */
+	send_bytes_to_pi(output_buffer, 6 + 39);
 	
-	/* send the command to the pi */
-	send_command_to_pi(command);	
-	printf("Sent: %s\r\n",command);
-	
-	/* clear the buffer */
-	clear_buffer( memory_buffer );
-	
+	/* format of response:                                      */
+	/* PISALLOC ALLOC_ID ERROR_ID                               */
+	/* PILALLOC (1 byte) value 28                               */
+	/* ALLOC_ID (1 byte) range 0 to 20                          */
+    /* ALLOC_ID value 0 means error occured                     */
+    /* ALLOC_ID value 1 to 20 alloc_id saved from               */
+    /* ERROR_ID (1 byte) range 0 to 2                           */
+	/* ERROR_ID value 0 no error occured                        */
+	/* ERROR_ID value 1 when parameters are incorrect           */
+	/* ERROR_ID value 2 unable to save file                     */
+
 	/* read the response from the pi */
-	read_response_from_pi(memory_buffer);
-    printf("Response: %s\r\n",memory_buffer);
-	/* response PILALOC 3 37\n meaning the pi read 37 bytes into the memory allocation 1 (starting at page 0) */
+	read_response_from_pi(response_buffer); 
 	
-	printf("\r\nPress any key to continue\r");
-	printf("\r\n");
-	printf("\r\n");	
-	
-	km_wait_char();
-
-	/*********************************************/
-	/* Now cut memory from the allocation on the */
-	/* file on the pi                            */
-	/*********************************************/
-	
- 	/* format of request:                                                            */
-	/* XALLOC ALLOCATION_ID START_CUT LENGTH_OF_CUT\n                                */
-	/* example:                                                                      */
-	/* XALLOC 1 20 50\n Will cut out 50_bytes of data from position 20 in allocation */
-	/* return values:                                                                */
-	/* XALLOC OK ALLOCATION_ID\n                                                     */
-	/* XALLOC ERROR 1\n when parameters are incorrect                                */
-	/* XALLOC ERROR 2\n position+cut_length go beyond end of allocation memory       */
-	
-
-	command = "XALLOC 3 7 4\n";
-	
-	/* send the command to the pi */
-	send_command_to_pi(command);	
-	printf("Sent: %s\r\n",command);
-	
-	/* clear the buffer */
-	clear_buffer( memory_buffer );
-	
-	/* read the response from the pi */
-	read_response_from_pi(memory_buffer);
-    printf("Response: %s\r\n",memory_buffer);
-	/* response XALLOC 1 37\n meaning the pi read 37 bytes into the memory allocation 1 (starting at page 0) */
-	
-	printf("\r\nPress any key to continue\r");
-	printf("\r\n");
-	printf("\r\n");	
-	
-	km_wait_char();
-
-	/*********************************************/
-	/* Now save the memory allocation on the pi  */
-	/* to a file on the pi (with our changes)    */
-	/*********************************************/
-	
-	/* format of request:                                       */
-	/* PISALLOC ALLOCATION_ID /PATH/FILENAME FILESIZE\n         */
-	/* FILESIZE is size you want to save from memory allocation */
-	/* example:                                                 */
-	/* PISALLOC 1 /home/pi/mcp_pi/HowThisWorks.txt 4086\n       */
-	/* return values:                                           */
-	/* PISALLOC ALLOCATION_ID OK\n                              */
-	/* PILALOC ERROR 1\n parameter error                        */
-	/* PILALOC ERROR 2\n unable to write to file                */
-	
-	command = "PISALLOC 3 /home/pi/mcp_pi/delete_me_save_test3.sh 45\n";
-	
-	/* send the command to the pi */
-	send_command_to_pi(command);	
-	printf("Sent: %s\r\n",command);
-	
-	/* clear the buffer */
-	clear_buffer( memory_buffer );
-	
-	/* read the response from the pi */
-	read_response_from_pi(memory_buffer); 
-    printf("Response: %s\r\n",memory_buffer);
-	/* response PISALLOC 3 OK\n meaning we saved memory allocation 3 successfully to the file specified - now check on the pi that this is true! */
-	
-	printf("\r\nPress any key to continue\r");
-	printf("\r\n");
-	printf("\r\n");	
-	
-	km_wait_char();
-
-
 	/*****************************************************************/
 	/* As we have finished lets free the memory allocation on the pi */
 	/*****************************************************************/
-	
+
 	/* format of request:                                */
-	/* FALLOC ALLOCATION_ID\n                            */
-	/* example:                                          */
-	/* FALLOC 1\n which releases all memory associated   */
-	/* with allocation_id 1.  The allocation id is what  */
-	/* what was returned after doing a CALLOC request    */
-	/* NOTE: When you have allocated memory with CALLOC  */
-	/* and are now using FALLOC to release it - you are  */
-	/* releaseing all the memory for that allocation_ID  */
-	/* i.e. you can't release just part of the memory.   */
-	/* return values:                                    */
-	/* FALLOC ERROR 1\n when parameters are incorrect    */
-    /* FALLOC FREE\n when all memory for that allocation */
-	/* id has been released in the pi                    */
-	
-	command = "FALLOC 1\n";
-	
-	/* send the command to the pi */
-	send_command_to_pi(command);	
-	printf("Sent: %s\r\n",command);
-	
+	/* FALLOC ALLOC_ID                                   */
+	/* FALLOC (1 byte) value 22                          */
+	/* ALLOC_ID (1 byte) range 1 to 20                   */
+
 	/* clear the buffer */
-	clear_buffer( memory_buffer );
+	clear_buffer(output_buffer, OUTPUT_BUFFER_LENGTH);
+	clear_buffer(response_buffer, RESPONSE_BUFFER_LENGTH);
+		
+	printf("FAllOC \r\n");
 	
+	/* command id */
+	output_buffer[0] = 22;
+	/* use memory allocation 1 (created above) */
+	output_buffer[1] = 1;
+
+	/* send the command to the pi */
+	send_bytes_to_pi(output_buffer, 2);
+	
+	/* format of response:                               */
+	/* FALLOC ALLOC_ID ERROR_ID                          */ 
+	/* FALLOC (1 byte) value 22                          */
+	/* ALLOC_ID (1 byte) range 0 to 20                   */
+    /* ALLOC_ID value 0 means error occured              */
+    /* ALLOC_ID value 1 to 20 alloc_id freed ok          */
+    /* ERROR_ID (1 byte) range 0 to 1                    */
+	/* ERROR_ID value 0 no error occured                 */
+	/* ERROR_ID value 1 when parameters are incorrect    */
+
 	/* read the response from the pi */
-	read_response_from_pi(memory_buffer); 
-    printf("Response: %s\r\n",memory_buffer);
-	/* response FALLOC FREE\n meaning we released memory allocation 1 successfully hence it can no longer be used */
+	read_response_from_pi(response_buffer);     
+
+	printf("\r\nPress any key to continue\r");
+	printf("\r\n");
+	printf("\r\n");	
+	
+	km_wait_char();
+
+
+
+
+
+
+	/***********************************/
+	/* Create a memory allocation on   */
+	/* the raspberry pi                */
+	/***********************************/
+
+	/* format of request:                                   */
+	/* CALLOC NUM_PAGES SIZE_OF_PAGES                       */
+	/* CALLOC (1 byte) value 21                             */
+    /* NUM_PAGEs (2 bytes) range 1 to 9999                  */
+    /* SIZE_OF_PAGES_IN_KB (1 byte) range 1 to 32           */
+	/* example:                                             */
+    /* 21 06 00 01                                          */
+    /* where 06 + (00 << 8) is 6 pages of 8KB               */
+
+	/* clear the buffer */
+	clear_buffer(output_buffer, OUTPUT_BUFFER_LENGTH);
+	clear_buffer(response_buffer, RESPONSE_BUFFER_LENGTH);
+	
+	printf("CAllOC \r\n");
+
+	/* command id */
+	output_buffer[0] = 21;
+	/* number of pages lo/high */
+	output_buffer[1] = 6;
+	output_buffer[2] = 0;
+	/* size of page to create (in KB) */
+	output_buffer[3] = 1;
+
+	/* send the command to the pi */
+	send_bytes_to_pi(output_buffer, 4);
+
+	/* format of response:                                  */
+	/* CALLOC ALLOC_ID ERROR_ID                             */ 
+    /* CALLOC 21 (1 byte)                                   */
+    /* ALLOC_ID (1 byte) range 0 to 20                      */
+    /* ALLOC_ID value 0 means error occured                 */
+    /* ERROR_ID (1 byte) range 0 to 2                       */
+	/* ERROR_ID value 0 no error occured                    */
+	/* ERROR_ID value 1 when parameters are incorrect       */
+	/* ERROR_ID value 2 when pi can't allocate memory       */
+
+	/* read the response from the pi */
+	read_response_from_pi(response_buffer);
+
+	/***********************************/
+	/* Load in a file on the pi into   */
+	/* the memory allocated            */
+	/***********************************/
+		
+	/* format of request:                                  */
+	/* PILALLOC ALLOC_ID /PATH/TO/FILENAME\n               */
+	/* PILALLOC (1 byte) value 27                          */
+	/* ALLOC_ID (1 byte) range 1 to 20                     */
+	/* /PATH/TO/FILENAME is a string filename path  with   */
+	/* \n termination                                      */
+
+	/* clear the buffer */
+	clear_buffer(output_buffer, OUTPUT_BUFFER_LENGTH);
+	clear_buffer(response_buffer, RESPONSE_BUFFER_LENGTH);
+	
+	printf("PILAllOC \r\n");
+	
+	/* command id */
+	output_buffer[0] = 27;
+	/* use memory allocation 1 (created above) */
+	output_buffer[1] = 1;
+	/* copy the path to file into the memory buffer */
+    copy_message_into_buffer(&output_buffer[2], file_name, 0);
+
+	/* send the command to the pi (30 is size of path and filename) */
+	send_bytes_to_pi(output_buffer, 2 + 30);
+
+	/* format of response:                                 */
+	/* PILALLOC ALLOC_ID FILE_SIZE ERROR_ID                */
+	/* PILALLOC (1 byte) value 27                          */
+	/* ALLOC_ID (1 byte) range 0 to 20                     */
+    /* ALLOC_ID value 0 means error occured                */
+    /* ALLOC_ID value 1 to 20 alloc_id to be modified      */
+	/* FILE_SIZE (4 byte) range 0 to sizeof(int)           */
+	/*   format high16bit(lo/high) low16bit(lo/high)       */
+    /* ERROR_ID (1 byte) range 0 to 3                      */
+	/* ERROR_ID value 0 no error occured                   */
+	/* ERROR_ID value 1 when parameters are incorrect      */
+	/* ERROR_ID value 2 unable to load file                */
+	/* ERROR_ID value 3 file to large to fit allocation    */
+
+	/* read the response from the pi */
+	read_response_from_pi(response_buffer);
+
+	/**********************************************/
+	/* Now lets insert memory into the allocation */
+	/**********************************************/
+
+	/* format of request:                                  */
+	/* IALLOC ALLOC_ID INSERT_AT INSERT_LENGTH             */
+	/* IALLOC (1 byte) value 25                            */
+	/* ALLOC_ID (1 byte) range 1 to 20                     */
+	/* INSERT_AT (4 byte) range 0 to sizeof(int)           */
+	/*   format high16bit(lo/high) low16bit(lo/high)       */
+	/*   Max size is the allocation size                   */
+	/* INSERT_LENGTH (4 byte) range 0 to sizeof(int)       */
+	/*   format high16bit(lo/high) low16bit(lo/high)       */
+	/*   Max size is the allocation size                   */
+
+	/* clear the buffer */
+	clear_buffer(output_buffer, OUTPUT_BUFFER_LENGTH);
+	clear_buffer(response_buffer, RESPONSE_BUFFER_LENGTH);
+	
+	printf("IAllOC \r\n");
+	
+	/* command id */
+	output_buffer[0] = 25;
+	/* use memory allocation 1 (created above) */
+	output_buffer[1] = 1;
+	output_buffer[2] = 0;
+	output_buffer[3] = 0;
+	output_buffer[4] = 12;
+	output_buffer[5] = 0;
+	output_buffer[6] = 0;
+	output_buffer[7] = 0;
+	output_buffer[8] = 12;
+	output_buffer[9] = 0;
+
+	/* send the command (of 10 bytes) to the pi */
+	send_bytes_to_pi(output_buffer, 10);
+
+	/* send the binary data to the pi to insert into the allocation */
+	send_binary_data_to_pi("Hello World\n", 12);
+	
+	/* format of response:                                 */
+	/* IALLOC ALLOC_ID ERROR_ID                            */
+	/* IALLOC (1 byte) value 25                            */
+	/* ALLOC_ID (1 byte) range 0 to 20                     */
+    /* ALLOC_ID value 0 means error occured                */
+    /* ALLOC_ID value 1 to 20 alloc_id to be modified      */
+    /* ERROR_ID (1 byte) range 0 to 3                      */
+	/* ERROR_ID value 0 no error occured                   */
+	/* ERROR_ID value 1 when parameters are incorrect      */
+	/* ERROR_ID value 2 unable to allocate memory on pi    */
+	/* ERROR_ID value 3 insert_at beyond end of allocation memory */
+
+	/* read the response from the pi */
+	read_response_from_pi(response_buffer);
+	
+	/*********************************************/
+	/* Now save the memory allocation on the pi  */
+	/* to a file on the pi (with our changes)    */
+	/*********************************************/
+	
+
+	/* format of request:                                       */
+	/* PISALLOC ALLOC_ID FILESIZE /PATH/FILENAME\n              */
+	/* PISALLOC (1 byte) value 28                               */
+	/* ALLOC_ID (1 byte) range 1 to 20                          */
+	/* FILE_SIZE (4 byte) range 0 to sizeof(int)                */
+	/*   format high16bit(lo/high) low16bit(lo/high)            */
+	/* /PATH/TO/FILENAME is a string filename path  with        */
+	/* \n termination                                           */
+
+	/* clear the buffer */
+	clear_buffer(output_buffer, OUTPUT_BUFFER_LENGTH);
+	clear_buffer(response_buffer, RESPONSE_BUFFER_LENGTH);
+		
+	printf("PISAllOC \r\n");
+	
+	/* command id */
+	output_buffer[0] = 28;
+	/* use memory allocation 1 (created above) */
+	output_buffer[1] = 1;
+	/* file size to save format high16bit(lo/high) low16bit(lo/high) */
+	output_buffer[2] = 0; 
+	output_buffer[3] = 0;
+	output_buffer[4] = 49; /* save 49 bytes */
+	output_buffer[5] = 0;
+	/* copy the path to file into the memory buffer */
+    copy_message_into_buffer(&output_buffer[6], new_file_name2, 0);
+
+	/* send the command to the pi 6 + size of path/filename */
+	send_bytes_to_pi(output_buffer, 6 + 40);
+	
+	/* format of response:                                      */
+	/* PISALLOC ALLOC_ID ERROR_ID                               */
+	/* PILALLOC (1 byte) value 28                               */
+	/* ALLOC_ID (1 byte) range 0 to 20                          */
+    /* ALLOC_ID value 0 means error occured                     */
+    /* ALLOC_ID value 1 to 20 alloc_id saved from               */
+    /* ERROR_ID (1 byte) range 0 to 2                           */
+	/* ERROR_ID value 0 no error occured                        */
+	/* ERROR_ID value 1 when parameters are incorrect           */
+	/* ERROR_ID value 2 unable to save file                     */
+
+	/* read the response from the pi */
+	read_response_from_pi(response_buffer); 
+	
+	/*****************************************************************/
+	/* As we have finished lets free the memory allocation on the pi */
+	/*****************************************************************/
+
+	/* format of request:                                */
+	/* FALLOC ALLOC_ID                                   */
+	/* FALLOC (1 byte) value 22                          */
+	/* ALLOC_ID (1 byte) range 1 to 20                   */
+
+	/* clear the buffer */
+	clear_buffer(output_buffer, OUTPUT_BUFFER_LENGTH);
+	clear_buffer(response_buffer, RESPONSE_BUFFER_LENGTH);
+		
+	printf("FAllOC \r\n");
+	
+	/* command id */
+	output_buffer[0] = 22;
+	/* use memory allocation 1 (created above) */
+	output_buffer[1] = 1;
+
+	/* send the command to the pi */
+	send_bytes_to_pi(output_buffer, 2);
+	
+	/* format of response:                               */
+	/* FALLOC ALLOC_ID ERROR_ID                          */ 
+	/* FALLOC (1 byte) value 22                          */
+	/* ALLOC_ID (1 byte) range 0 to 20                   */
+    /* ALLOC_ID value 0 means error occured              */
+    /* ALLOC_ID value 1 to 20 alloc_id freed ok          */
+    /* ERROR_ID (1 byte) range 0 to 1                    */
+	/* ERROR_ID value 0 no error occured                 */
+	/* ERROR_ID value 1 when parameters are incorrect    */
+
+	/* read the response from the pi */
+	read_response_from_pi(response_buffer); 
     
-	command = "FALLOC 2\n";
+	printf("\r\nPress any key to continue\r");
+	printf("\r\n");
+	printf("\r\n");	
 	
-	/* send the command to the pi */
-	send_command_to_pi(command);	
-	printf("Sent: %s\r\n",command);
-	
+	km_wait_char();
+
+
+
+
+	/***********************************/
+	/* Create a memory allocation on   */
+	/* the raspberry pi                */
+	/***********************************/
+
+	/* format of request:                                   */
+	/* CALLOC NUM_PAGES SIZE_OF_PAGES                       */
+	/* CALLOC (1 byte) value 21                             */
+    /* NUM_PAGEs (2 bytes) range 1 to 9999                  */
+    /* SIZE_OF_PAGES_IN_KB (1 byte) range 1 to 32           */
+	/* example:                                             */
+    /* 21 06 00 01                                          */
+    /* where 06 + (00 << 8) is 6 pages of 8KB               */
+
 	/* clear the buffer */
-	clear_buffer( memory_buffer );
+	clear_buffer(output_buffer, OUTPUT_BUFFER_LENGTH);
+	clear_buffer(response_buffer, RESPONSE_BUFFER_LENGTH);
 	
+	printf("CAllOC \r\n");
+
+	/* command id */
+	output_buffer[0] = 21;
+	/* number of pages lo/high */
+	output_buffer[1] = 6;
+	output_buffer[2] = 0;
+	/* size of page to create (in KB) */
+	output_buffer[3] = 1;
+
+	/* send the command to the pi */
+	send_bytes_to_pi(output_buffer, 4);
+
+	/* format of response:                                  */
+	/* CALLOC ALLOC_ID ERROR_ID                             */ 
+    /* CALLOC 21 (1 byte)                                   */
+    /* ALLOC_ID (1 byte) range 0 to 20                      */
+    /* ALLOC_ID value 0 means error occured                 */
+    /* ERROR_ID (1 byte) range 0 to 2                       */
+	/* ERROR_ID value 0 no error occured                    */
+	/* ERROR_ID value 1 when parameters are incorrect       */
+	/* ERROR_ID value 2 when pi can't allocate memory       */
+
 	/* read the response from the pi */
-	read_response_from_pi(memory_buffer); 
-    printf("Response: %s\r\n",memory_buffer);
-	/* response FALLOC FREE\n meaning we released memory allocation 2 successfully hence it can no longer be used */
+	read_response_from_pi(response_buffer);
+
+	/***********************************/
+	/* Load in a file on the pi into   */
+	/* the memory allocated            */
+	/***********************************/
+		
+	/* format of request:                                  */
+	/* PILALLOC ALLOC_ID /PATH/TO/FILENAME\n               */
+	/* PILALLOC (1 byte) value 27                          */
+	/* ALLOC_ID (1 byte) range 1 to 20                     */
+	/* /PATH/TO/FILENAME is a string filename path  with   */
+	/* \n termination                                      */
+
+	/* clear the buffer */
+	clear_buffer(output_buffer, OUTPUT_BUFFER_LENGTH);
+	clear_buffer(response_buffer, RESPONSE_BUFFER_LENGTH);
+	
+	printf("PILAllOC \r\n");
+	
+	/* command id */
+	output_buffer[0] = 27;
+	/* use memory allocation 1 (created above) */
+	output_buffer[1] = 1;
+	/* copy the path to file into the memory buffer */
+    copy_message_into_buffer(&output_buffer[2], file_name, 0);
+
+	/* send the command to the pi (30 is size of path and filename) */
+	send_bytes_to_pi(output_buffer, 2 + 30);
+
+	/* format of response:                                 */
+	/* PILALLOC ALLOC_ID FILE_SIZE ERROR_ID                */
+	/* PILALLOC (1 byte) value 27                          */
+	/* ALLOC_ID (1 byte) range 0 to 20                     */
+    /* ALLOC_ID value 0 means error occured                */
+    /* ALLOC_ID value 1 to 20 alloc_id to be modified      */
+	/* FILE_SIZE (4 byte) range 0 to sizeof(int)           */
+	/*   format high16bit(lo/high) low16bit(lo/high)       */
+    /* ERROR_ID (1 byte) range 0 to 3                      */
+	/* ERROR_ID value 0 no error occured                   */
+	/* ERROR_ID value 1 when parameters are incorrect      */
+	/* ERROR_ID value 2 unable to load file                */
+	/* ERROR_ID value 3 file to large to fit allocation    */
+
+	/* read the response from the pi */
+	read_response_from_pi(response_buffer);
+
+	/**********************************************************/
+	/* Now lets cut out a section of memory in the allocation */
+	/**********************************************************/
+
+	/* format of request:                                  */
+	/* XALLOC ALLOC_ID CUT_FROM CUT_LENGTH                 */
+	/* XALLOC (1 byte) value 26                            */
+	/* ALLOC_ID (1 byte) range 1 to 20                     */
+	/* CUT_FROM (4 byte) range 0 to sizeof(int)            */
+	/*   format high16bit(lo/high) low16bit(lo/high)       */
+	/*   Max size is the allocation size                   */
+	/* CUT_LENGTH (4 byte) range 0 to sizeof(int)          */
+	/*   format high16bit(lo/high) low16bit(lo/high)       */
+	/*   Max size is the allocation size                   */
+
+	/* clear the buffer */
+	clear_buffer(output_buffer, OUTPUT_BUFFER_LENGTH);
+	clear_buffer(response_buffer, RESPONSE_BUFFER_LENGTH);
+	
+	printf("XAllOC \r\n");
+	
+	/* command id */
+	output_buffer[0] = 26;
+	/* use memory allocation 1 (created above) */
+	output_buffer[1] = 1;
+	output_buffer[2] = 0;
+	output_buffer[3] = 0;
+	output_buffer[4] = 7; /* from byte 7 of allocation */
+	output_buffer[5] = 0;
+	output_buffer[6] = 0;
+	output_buffer[7] = 0;
+	output_buffer[8] = 4; /* cut out 4 bytes (bash) */
+	output_buffer[9] = 0;
+
+	/* send the command (of 10 bytes) to the pi */
+	send_bytes_to_pi(output_buffer, 10);
+	
+	/* format of response:                                 */
+	/* XALLOC ALLOC_ID ERROR_ID                            */
+	/* XALLOC (1 byte) value 26                            */
+	/* ALLOC_ID (1 byte) range 0 to 20                     */
+    /* ALLOC_ID value 0 means error occured                */
+    /* ALLOC_ID value 1 to 20 alloc_id to be modified      */
+    /* ERROR_ID (1 byte) range 0 to 2                      */
+	/* ERROR_ID value 0 no error occured                   */
+	/* ERROR_ID value 1 when parameters are incorrect      */
+	/* ERROR_ID value 2 position+cut_length go beyond end  */
+	/*         of allocation memory                        */
+
+	/* read the response from the pi */
+	read_response_from_pi(response_buffer);
+	
+	/*********************************************/
+	/* Now save the memory allocation on the pi  */
+	/* to a file on the pi (with our changes)    */
+	/*********************************************/
+	
+	/* format of request:                                       */
+	/* PISALLOC ALLOC_ID FILESIZE /PATH/FILENAME\n              */
+	/* PISALLOC (1 byte) value 28                               */
+	/* ALLOC_ID (1 byte) range 1 to 20                          */
+	/* FILE_SIZE (4 byte) range 0 to sizeof(int)                */
+	/*   format high16bit(lo/high) low16bit(lo/high)            */
+	/* /PATH/TO/FILENAME is a string filename path  with        */
+	/* \n termination                                           */
+
+	/* clear the buffer */
+	clear_buffer(output_buffer, OUTPUT_BUFFER_LENGTH);
+	clear_buffer(response_buffer, RESPONSE_BUFFER_LENGTH);
+		
+	printf("PISAllOC \r\n");
+	
+	/* command id */
+	output_buffer[0] = 28;
+	/* use memory allocation 1 (created above) */
+	output_buffer[1] = 1;
+	/* file size to save format high16bit(lo/high) low16bit(lo/high) */
+	output_buffer[2] = 0; 
+	output_buffer[3] = 0;
+	output_buffer[4] = 45; /* save 45 bytes */
+	output_buffer[5] = 0;
+	/* copy the path to file into the memory buffer */
+    copy_message_into_buffer(&output_buffer[6], new_file_name3, 0);
+
+	/* send the command to the pi 6 + size of path/filename */
+	send_bytes_to_pi(output_buffer, 6 + 40);
+	
+	/* format of response:                                      */
+	/* PISALLOC ALLOC_ID ERROR_ID                               */
+	/* PILALLOC (1 byte) value 28                               */
+	/* ALLOC_ID (1 byte) range 0 to 20                          */
+    /* ALLOC_ID value 0 means error occured                     */
+    /* ALLOC_ID value 1 to 20 alloc_id saved from               */
+    /* ERROR_ID (1 byte) range 0 to 2                           */
+	/* ERROR_ID value 0 no error occured                        */
+	/* ERROR_ID value 1 when parameters are incorrect           */
+	/* ERROR_ID value 2 unable to save file                     */
+
+	/* read the response from the pi */
+	read_response_from_pi(response_buffer); 
+	
+	/*****************************************************************/
+	/* As we have finished lets free the memory allocation on the pi */
+	/*****************************************************************/
+
+	/* format of request:                                */
+	/* FALLOC ALLOC_ID                                   */
+	/* FALLOC (1 byte) value 22                          */
+	/* ALLOC_ID (1 byte) range 1 to 20                   */
+
+	/* clear the buffer */
+	clear_buffer(output_buffer, OUTPUT_BUFFER_LENGTH);
+	clear_buffer(response_buffer, RESPONSE_BUFFER_LENGTH);
+		
+	printf("FAllOC \r\n");
+	
+	/* command id */
+	output_buffer[0] = 22;
+	/* use memory allocation 1 (created above) */
+	output_buffer[1] = 1;
+
+	/* send the command to the pi */
+	send_bytes_to_pi(output_buffer, 2);
+	
+	/* format of response:                               */
+	/* FALLOC ALLOC_ID ERROR_ID                          */ 
+	/* FALLOC (1 byte) value 22                          */
+	/* ALLOC_ID (1 byte) range 0 to 20                   */
+    /* ALLOC_ID value 0 means error occured              */
+    /* ALLOC_ID value 1 to 20 alloc_id freed ok          */
+    /* ERROR_ID (1 byte) range 0 to 1                    */
+	/* ERROR_ID value 0 no error occured                 */
+	/* ERROR_ID value 1 when parameters are incorrect    */
+
+	/* read the response from the pi */
+	read_response_from_pi(response_buffer); 
     
-	command = "FALLOC 3\n";
-	
-	/* send the command to the pi */
-	send_command_to_pi(command);	
-	printf("Sent: %s\r\n",command);
-	
-	/* clear the buffer */
-	clear_buffer( memory_buffer );
-	
-	/* read the response from the pi */
-	read_response_from_pi(memory_buffer); 
-    printf("Response: %s\r\n",memory_buffer);
-	/* response FALLOC FREE\n meaning we released memory allocation 3 successfully hence it can no longer be used */
-	
-	
 	/************************************/
 	/* Wait for a key press as the CPC  */
 	/* will hard reset when the program */
@@ -651,40 +848,47 @@ void main ( void )
 	km_wait_char();
 }
 
-void send_command_to_pi(const uint8_t *command)
+void send_bytes_to_pi(uint8_t *data, uint8_t size_to_send)
 {
-	uint16_t counter = 0;
-	
-	/* count to the end of the null terminated string */
-	while(command[counter] != 0)
-	{
-		counter++;
-	}
-	
+	/*
+	printf("Size %d\r\n", size_to_send);
+	printf("Data 0 - %d\r\n", data[0]);
+	printf("Data 1 - %d\r\n", data[1]);
+	printf("Data 2 - %d\r\n", data[2]);
+	printf("Data 3 - %d\r\n", data[3]);
+    */
+
+	printf("Sending: ");
 	/* send the +++ delimiter */
-	fifo_out_byte('+');
-	fifo_out_byte('+');
-	fifo_out_byte('+');
+	fifo_out_byte('+'); printf("%02d ", '+');
+	fifo_out_byte('+'); printf("%02d ", '+');
+	fifo_out_byte('+'); printf("%02d ", '+');
 	
 	/* send the size of the command - low byte (+3 is packet over head) */
-	fifo_out_byte(counter + 3);
+	fifo_out_byte((size_to_send + 3) % 256);
+	printf("%02d ", (size_to_send + 3) % 256);
 
 	/* send the size of the command - high byte */
-	fifo_out_byte(0);
+	fifo_out_byte((size_to_send + 3) / 256);
+	printf("%02d ", (size_to_send + 3) / 256);
 	
-	/* send the packet_type */
-	fifo_out_byte(1);
+	/* send the BinaryComand type*/
+	fifo_out_byte(2);
+	printf("02 ");
 	
 	/* send the command to the pi */
-	for(uint8_t index = 0; index < counter; index++)
+	for(uint8_t index = 0; index < size_to_send; index++)
 	{
-		fifo_out_byte(command[ index ]);
+		fifo_out_byte(data[index]);
+		printf("%02d ", data[index]);
 	}
 	
 	/* send the --- delimiter */
-	fifo_out_byte('-');
-	fifo_out_byte('-');
-	fifo_out_byte('-');	
+	fifo_out_byte('-');  printf("%02d ", '-');
+	fifo_out_byte('-');  printf("%02d ", '-');
+	fifo_out_byte('-');	 printf("%02d ", '-');
+
+	printf("\r\r\n");
 }
 
 void read_response_from_pi(uint8_t *response)
@@ -692,15 +896,18 @@ void read_response_from_pi(uint8_t *response)
 	uint16_t index = 0;
 	uint8_t packet_header[6];
 	
+	printf("Reading: ");
+
 	/* read the first 6 bytes */
 	while(index < 6)
 	{
 		packet_header[index] = get_byte_from_pi();
+		printf("%02d ", packet_header[index]);
 		index++;
 	}
 	
-	/* if we got a packet header delimiter '+++' as expected and packet type is TextCommand (1) */
-	if(packet_header[0] == '+' && packet_header[1] == '+' && packet_header[2] == '+' && packet_header[5] == 1)
+	/* if we got a packet header delimiter '+++' as expected and packet type is BinaryCommand (2) */
+	if(packet_header[0] == '+' && packet_header[1] == '+' && packet_header[2] == '+' && packet_header[5] == 2)
 	{
 		uint16_t number_bytes = packet_header[3] + (packet_header[4] * 256) - 3; /* -3 as size includes packet header */
 		
@@ -709,6 +916,7 @@ void read_response_from_pi(uint8_t *response)
 		while(index < number_bytes)
 		{
 			response[index] = get_byte_from_pi();
+			printf("%02d ", response[index]);
 			index++;
 		}
 		
@@ -716,9 +924,11 @@ void read_response_from_pi(uint8_t *response)
 		index = 0;
 		while(index < 3)
 		{
-			get_byte_from_pi();
+			printf("%02d ", get_byte_from_pi());
 			index++;
 		}		
+
+		printf("\r\r\n");
 	}
 	else
 	{
@@ -741,11 +951,13 @@ uint8_t get_byte_from_pi(void)
 	return(byte_received);
 }
 
-void send_binary_data_to_pi(const uint8_t *memory_buffer, uint16_t number_bytes_to_write)
+void send_binary_data_to_pi(const uint8_t *response_buffer, uint16_t number_bytes_to_write)
 {
 	uint16_t index = 0;
 	uint16_t total_bytes_to_send = number_bytes_to_write + 3;
 	
+	printf("Sending BinaryData ... ");
+
 	/* send the +++ delimiter */
 	fifo_out_byte('+');
 	fifo_out_byte('+');
@@ -763,24 +975,29 @@ void send_binary_data_to_pi(const uint8_t *memory_buffer, uint16_t number_bytes_
 	/* send the command to the pi */
 	for(index = 0; index < number_bytes_to_write; index++)
 	{
-		fifo_out_byte(memory_buffer[ index ]);
+		fifo_out_byte(response_buffer[ index ]);
 	}
 	
 	/* send the --- delimiter */
 	fifo_out_byte('-');
 	fifo_out_byte('-');
-	fifo_out_byte('-');	
+	fifo_out_byte('-');
+
+	printf("done\r\n");
 }
 
-void read_binary_data_from_pi(uint8_t *memory_buffer, uint16_t number_bytes_to_read)
+void read_binary_data_from_pi(uint8_t *response_buffer, uint16_t number_bytes_to_read)
 {
 	uint16_t index = 0;
 	uint8_t packet_header[6];
 	
+	printf("Reading Binary ... ");
+
 	/* read the first 6 bytes */
 	while(index < 6)
 	{
 		packet_header[index] = get_byte_from_pi();
+		/* printf("%02d ", packet_header[index]); */
 		index++;
 	}
 	
@@ -795,19 +1012,21 @@ void read_binary_data_from_pi(uint8_t *memory_buffer, uint16_t number_bytes_to_r
 		/* read the message */
 		while(index < number_bytes_to_read)
 		{
-			memory_buffer[index] = get_byte_from_pi();
+			response_buffer[index] = get_byte_from_pi();
+			/* printf("%02d ", response_buffer[index]); */
 			index++;
-			
-			/* printf("Got %d\r", index); */
 		}
 		
 		/* read the trailing delimiters '---' */
 		index = 0;
 		while(index < 3)
 		{
+			/* printf("%02d ", get_byte_from_pi()); */
 			get_byte_from_pi();
 			index++;
 		}		
+
+		printf("done.\r\r\n");
 	}
 	else
 	{
@@ -817,7 +1036,7 @@ void read_binary_data_from_pi(uint8_t *memory_buffer, uint16_t number_bytes_to_r
 
 /* this function just copies the message into the response buffer provided           */
 /* it makes no attempt to check the copy fits etc as this is a simple test program!! */
-void copy_message_into_buffer(uint8_t *memory_buffer, const uint8_t *change_text, uint16_t position_to_add)
+void copy_message_into_buffer(uint8_t *response_buffer, const uint8_t *change_text, uint16_t position_to_add)
 {
 	uint16_t counter = 0;
 	
@@ -830,18 +1049,18 @@ void copy_message_into_buffer(uint8_t *memory_buffer, const uint8_t *change_text
 	/* copy the change_text a byte at a time into the buffer */
 	for(uint16_t index = 0; index < counter; index++)
 	{
-		memory_buffer[index + position_to_add] = change_text[index];
+		response_buffer[index + position_to_add] = change_text[index];
 	}
 	
-	memory_buffer[position_to_add + counter + 1] = 0;
+	response_buffer[position_to_add + counter + 1] = 0;
 }
 
-void clear_buffer(uint8_t *memory_buffer)
+void clear_buffer(uint8_t *response_buffer, uint16_t size_of_buffer)
 {
 	/* clear every byte in the buffer */
-	for(uint16_t index = 0; index < RESPONSE_LENGTH; index++)
+	for(uint16_t index = 0; index < size_of_buffer; index++)
 	{
-		memory_buffer[index] = 0;
+		response_buffer[index] = 0;
 	}
 }
 
