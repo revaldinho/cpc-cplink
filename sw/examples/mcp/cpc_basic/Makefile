@@ -6,6 +6,5 @@ command.dsk: ${SRCS}
 
 all: command.dsk
 
-
 clean:
 	rm command.dsk *~
