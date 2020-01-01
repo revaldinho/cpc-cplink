@@ -1,26 +1,0 @@
-ASxxxx Assembler V02.00 + NoICE + SDCC mods  (Zilog Z80 / Hitachi HD64180), page 1.
-Hexadecimal [16-Bits]
-
-Symbol Table
-
-    .__.$$$.=  2710 L   |     .__.ABS.=  0000 G   |     .__.CPU.=  0000 L
-    .__.H$L.=  0000 L   |   0 _fifo_ge   000D GR  |   0 _fifo_ge   0005 GR
-  0 _fifo_in   0016 GR  |   0 _fifo_in   0066 GR  |   0 _fifo_in   00FA GR
-  0 _fifo_ou   0027 GR  |   0 _fifo_ou   00AE GR  |   0 _fifo_ou   0125 GR
-  0 _fifo_re   0000 GR  |   0 fep_end    0059 R   |   0 fep_end0   005E R
-  0 fep_get_   0056 R   |   0 fib_end    0025 R   |   0 fibs_end   00AA R
-  0 fibs_top   009D R   |   0 fibs_top   0092 R   |   0 fibs_top   0087 R
-  0 fibs_top   007C R   |   0 fifo_ext   0037 R   |   0 finbs_en   0121 R
-  0 finbs_to   011B R   |   0 finbs_to   0117 R   |   0 finbs_to   0113 R
-  0 finbs_to   010F R   |   0 fob_end    0035 R   |   0 fobs_end   00F6 R
-  0 fobs_top   00E8 R   |   0 fobs_top   00DC R   |   0 fobs_top   00D0 R
-  0 fobs_top   00C4 R   |   0 fonbs_en   014C R   |   0 fonbs_to   0146 R
-  0 fonbs_to   0142 R   |   0 fonbs_to   013E R   |   0 fonbs_to   013A R
-
-ASxxxx Assembler V02.00 + NoICE + SDCC mods  (Zilog Z80 / Hitachi HD64180), page 2.
-Hexadecimal [16-Bits]
-
-Area Table
-
-   0 _CODE      size  150   flags    0
-
