@@ -1,5 +1,5 @@
 	;; --------------------------------------------------------------
-	;; mcplib2.s
+	;; mcplib.s
 	;; --------------------------------------------------------------
 	;;
 	;; mcplib.s - an asm library for talking to mcp_pi via the CPC-CPLink board
@@ -101,13 +101,12 @@ endif
         ret
 
 	;; --------------------------------------------------------------
-	;; RSX: |SENDTXTCMD,&buffer,bufferlength%,@error%
+	;; RSX: |SENDTXTCMD,buffer$,@error%
 	;; --------------------------------------------------------------
 	;; Send a TextCommand via CP-LINK  to pi
 	;;
 	;; Entry (BASIC)
-	;; -  buffer is a memory address holding the command and its params to send (IX 4,5)
-	;;    bufferlength is the integer size of the buffer to send (IX 2,3)
+	;; -  buffer$ is a BASIC string holding the command (IX 2,3)
 	;;    error is an integer address so error values can be returned (IX 0,1)
 	;;
 	;; - A will have number of parameters
@@ -117,12 +116,37 @@ endif
 	;; - return to basic, error% will hold any errors
 	;; - error% == 0x1 - invalid numbers of parameters
 SendTextCommand
-        cp 3                    ; we are expecting three parameters
-        jp nz,ParamError        ; return error for invalid number of parameters
+        cp 2                    ; we are expecting three parameters
+        jp nz,ParamError        ; return error for invalid number of parameters        
+        push ix
+        push de
+        push hl
+        ld   h, (ix+3)          ; string descriptor pointer
+        ld   l, (ix+2)
+        ld   b, 0
+        ld   c, (hl)            ; string len
+        inc     hl
+        ld   e, (hl)            ; de = bytes pointer
+        inc     hl
+        ld   d, (hl)
+        ld   h, (ix+1)          ; hl = error num pointer
+        ld   l, (ix)
+        ;; create a new stack frame and point to last entry with ix        
+        push de                 ; buffer address
+        push bc                 ; buffer length
+        push hl                 ; error number
+        ld   ix,0
+        add  ix,sp        
         ld e,TEXTCOMMAND        ; set e as parameter to SendPacket packet type
         call SendPacket         ; we have three params - send packet
+        ;;  undo stack frame
+        pop  hl                 ; discard
+        pop  bc                 ; discard
+        pop  de                 ; discard
+        pop  hl                 ; restore hl from entry to proc
+        pop  de                 ; restore de from entry to proc
+        pop  ix                 ; restore ix from entry to proc
         ret                     ; return to basic
-
 	;; --------------------------------------------------------------
 	;; RSX: |GETTXTCMDREPLY,&buffer,@bufferlength%,printval,%@error%
 	;; --------------------------------------------------------------
