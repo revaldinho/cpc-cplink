@@ -4,7 +4,6 @@
 #include <string.h>
 #include <unistd.h>
 
-
 #ifdef WIRINGPI
 	#include <wiringPi.h>
 	#define GET_DIR digitalRead(PIN_DIR)

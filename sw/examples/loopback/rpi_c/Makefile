@@ -14,7 +14,7 @@ fifolib.o: fifolib.c fifolib.h
 	(cd ${VPATH} ; make USERDEFINES=${USERDEFINES} ) 
 
 loopback: loopback.c fifolib.o 
-	cc loopback.c ${VPATH}/fifolib.o -o loopback -I${VPATH} -lwiringPi
+	cc loopback.c ${VPATH}/fifolib.o -o loopback -I${VPATH} -lwiringPi ${USERDEFINES}
 
 clean:
 	(cd ${VPATH} ; make clean)

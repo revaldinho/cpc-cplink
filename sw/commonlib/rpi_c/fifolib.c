@@ -50,8 +50,8 @@ int read_fifo_byte() {
   digitalWrite(PIN_SOB, HIGH);
   digitalWrite(PIN_SOB, LOW);
   // wait for DOR to go low immediately following -ve edge on SOB
-  // but slower Pis might miss the event
-  while ( digitalRead(PIN_DOR) && !timeout) { timeout--; } ;
+  // but slower Pis might miss the event so need a timeout
+  while ( digitalRead(PIN_DOR) && timeout) { timeout--; } ;
 #endif
   return(rval);
 }
