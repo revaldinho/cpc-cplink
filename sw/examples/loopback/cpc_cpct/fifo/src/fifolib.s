@@ -133,7 +133,7 @@ fgb_loop:
 	;; fifo_out_byte    (__z88dk_fastcall)
 	;; --------------------------------------------------------------
 	;;
-	;; Write a singleto the FIFO. Non-blocking.
+	;; Write a single byte to the FIFO. Non-blocking.
 	;;
 	;; Entry
 	;; - L holds byte to be written
