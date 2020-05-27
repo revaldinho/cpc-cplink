@@ -170,7 +170,7 @@ _fifo_put_byte::
 fpb_loop:       
         in   a,(c)         	; get dir status flag
         and  #0x2
-        jr   z,fgb_loop         ; loop again if not yet ready
+        jr   z,fpb_loop         ; loop again if not yet ready
         dec c			; point to data reg
         out (c), l              ; write the byte
         ret
