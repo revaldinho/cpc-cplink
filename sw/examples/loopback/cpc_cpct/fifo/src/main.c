@@ -69,12 +69,11 @@ void main ( void ) {
   puts("         (Use blocking read/write routines)\r");  
   
   kl_time_set(0);
-  for ( i=0 ; i < SZ; i++ ) {
+  for ( i=0 ; i < SZ; i++ ) {    
     fifo_put_byte(*(tx_p+i));
-  }
-  for ( i=0 ; i < SZ; i++ ) {  
     *(rx_p+i) = fifo_get_byte();
   }
+  
   t = kl_time_please(); 
   show_stats(i,j,t);
   check_data( tx_p, rx_p, SZ);
