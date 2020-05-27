@@ -108,11 +108,32 @@ fib_end:
         ret
 
 	;; --------------------------------------------------------------
+	;; fifo_get_byte    (__z88dk_fastcall)
+	;; --------------------------------------------------------------
+	;;
+	;; Wait until the FIFO has a byte to read and then read and return it.
+	;;
+	;; Entry
+	;; - none
+	;;
+	;; Exit
+	;; - L holds byte to be returned
+	;; - AF, BC corrupt
+_fifo_get_byte::
+        ld   bc, #0xfd81
+fgb_loop:       
+        in   a,(c)         	; get status
+        and  #0x1              	; test DOR flag
+        jr   z,fgb_loop 	; Get status again if not ready
+        dec  c                  ; point to status register
+        in   l,(c)         	; get byte
+        ret
+        
+	;; --------------------------------------------------------------
 	;; fifo_out_byte    (__z88dk_fastcall)
 	;; --------------------------------------------------------------
 	;;
-	;; Write a single byte and store it in the location pointed to by
-	;; a parameter.
+	;; Write a singleto the FIFO. Non-blocking.
 	;;
 	;; Entry
 	;; - L holds byte to be written
@@ -132,6 +153,28 @@ fob_end:
         ld   l,a
         ret
 
+	;; --------------------------------------------------------------
+	;; fifo_put_byte    (__z88dk_fastcall)
+	;; --------------------------------------------------------------
+	;;
+	;; Wait until FIFO is ready to receive a byte, then write a single
+        ;; byte
+	;;
+	;; Entry
+	;; - L holds byte to be written
+	;;
+	;; Exit
+	;; - AF, BC corrupt
+_fifo_put_byte::
+        ld   bc, #0xfd81
+fpb_loop:       
+        in   a,(c)         	; get dir status flag
+        and  #0x2
+        jr   z,fgb_loop         ; loop again if not yet ready
+        dec c			; point to data reg
+        out (c), l              ; write the byte
+        ret
+        
 	;; --------------------------------------------------------
 	;; fifo_ext_param
 	;; --------------------------------------------------------

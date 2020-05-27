@@ -65,7 +65,21 @@ void main ( void ) {
   show_stats(i,j,t);
   check_data( tx_p, rx_p, SZ);
 
-  puts("\nTest 2: Send/Receive multiple bytes, check FIFO status per byte\r");
+  puts("\nTest 2: Send/Receive 1 byte at a time, check FIFO status per byte\r");
+  puts("         (Use blocking read/write routines)\r");  
+  
+  kl_time_set(0);
+  for ( i=0 ; i < SZ; i++ ) {
+    fifo_put_byte(*(tx_p+i));
+  }
+  for ( i=0 ; i < SZ; i++ ) {  
+    *(rx_p+i) = fifo_get_byte();
+  }
+  t = kl_time_please(); 
+  show_stats(i,j,t);
+  check_data( tx_p, rx_p, SZ);
+  
+  puts("\nTest 3: Send/Receive multiple bytes, check FIFO status per byte\r");
   kl_time_set(0);
   for ( i=0, j=0; (i+j) < DBL_SZ; ) {
     if (i < SZ) {
@@ -80,7 +94,7 @@ void main ( void ) {
   show_stats(i,j,t);
   check_data( tx_p, rx_p, SZ);
 
-  puts("\nTest 3: Send/Receive 255 byte blocks, no status check\r");
+  puts("\nTest 4: Send/Receive 255 byte blocks, no status check\r");
   kl_time_set(0);
   for ( i=0, j=0; (i+j) < DBL_SZ; ) {
     while ( i< SZ ) {
