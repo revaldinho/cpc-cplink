@@ -81,7 +81,7 @@ MOV C2       (3.40 0.75) ;
 Layer tPlace ;
 CHANGE FONT PROPORTIONAL ; 
 CHANGE SIZE 0.07
-TEXT 'CPC-CPLINK CPC Coprocessor Link v1.0' R0 (1.7 3.1) ;
+TEXT 'CPC-CPLINK CPC Coprocessor Link v1.01' R0 (1.7 3.1) ;
 CHANGE SIZE 0.05
 TEXT '(C) 2019 Revaldinho, github.com/revaldinho/cpc-cplink'  R90      (0.1 0.1) ;
 
@@ -126,10 +126,10 @@ AUTO ;
 
 ## Define power fills top and bottom over whole board area
 layer Top ; 
-polygon VDD 0.08 (0 0) (0 3.2) (3.9 3.2) (3.9 0) (0 0) ;
+polygon VDD 0.015 (0 0) (0 3.2) (3.9 3.2) (3.9 0) (0 0) ;
   
 layer Bottom ; 
-polygon VSS 0.08 (0 0) (0 3.2) (3.9 3.2) (3.9 0) (0 0) ;
+polygon VSS 0.015 (0 0) (0 3.2) (3.9 3.2) (3.9 0) (0 0) ;
  
 
 Ratsnest ;  ## Calculate and display polygons
