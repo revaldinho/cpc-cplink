@@ -3,7 +3,7 @@
 	;; --------------------------------------------------------------
 	;;
 	;; fiforsx.s - an RSX library for the CPC-CPLink board
-	;; Copyright (C) 2019  Revaldinho
+	;; Copyright (C) 2019,2022  Revaldinho
 	;;
 	;; This program is free software: you can redistribute it and/or modify
 	;; it under the terms of the GNU General Public License as published by
@@ -30,24 +30,44 @@
         ;;
         ;; 2. BASIC strings are stored as
         ;;   <addr> -> Handle:<Len byte, addr2> --> Bytes ....
-        ;; 
+        ;;
         ;; 3. To load RSXes in BASIC use:
         ;;  MEMORY &9C39: LOAD "FIFORSX.BIN", &9C40: CALL &9C40
+        ;; OR
+        ;;   Assemble to ROM (setenv ROMflag -DROM before running make)
+#ifdef ROM
+        ORG             0xC000
+        DB              0x1     ; 1=background ROM
+        DB              VER     ; Version.subversion.subsubversion
+        DB              SVER
+        DB              SSVER
+#else
         ORG             0x9C40
+#endif
         FIFO_STATUS     EQU     0xFD81
         FIFO_DATA       EQU     0xFD80
         FIFO_DIR        EQU     0x2
         FIFO_DOR        EQU     0x1
         KL_LOG_EXT      EQU     0xbcd1
+        TXT_OUTPUT      EQU     0xbb5a
+        VER             EQU     0x1
+        SVER            EQU     0x0
+        SSVER           EQU     0x0
+
+#ifndef ROM
         ;; ------------------------------------------------------------------
         ;; install RSX
         LD      hl,work_space   ;address of a 4 byte workspace useable by Kernel
         LD      bc,jump_table   ;address of command name table and routine handlers
-        JP      kl_log_ext      ;Install RSX's
+        JP      kl_log_ext      ;Install RSXes
 WORK_SPACE:                     ;Space for kernel to use
         DS      4
+#endif
 JUMP_TABLE:
         DW      name_table      ;address pointing to RSX commands
+#ifdef ROM
+        JP      FIFOROMINIT
+#endif
         JP      FIFOGETC
         JP      FIFOGETS
         JP      FIFOINC
@@ -57,6 +77,9 @@ JUMP_TABLE:
         JP      FIFORST
 NAME_TABLE:
         ;; NB the last letter of each RSX name must have bit 7 set to 1.
+#ifdef ROM
+        DB      "FIFO ROM INI","T"+0x80 ; illegal name for init command so that it cant be called again
+#endif
         DB      "FIFOGET","C"+0x80
         DB      "FIFOGET","S"+0x80
         DB      "FIFOIN","C"+0x80
@@ -77,7 +100,7 @@ NAME_TABLE:
         ;;  all registers preserved via stack
 FIFOPUTC:
         CP      1 ; check parameter count and return if not 1
-        JR      nz,PERROR         
+        JR      nz,PERROR
         PUSH    AF
         PUSH    BC
         PUSH    DE
@@ -106,7 +129,7 @@ FPC1:
         ;;   bc,af,hl all preserved via stack
 FIFOGETC:
         CP      1       ; check parameter count and return if not 1
-        JR      nz,PERROR 
+        JR      nz,PERROR
         PUSH    AF
         PUSH    BC
         PUSH    DE
@@ -171,14 +194,9 @@ RESTOREANDRETURN:
         POP     BC
         POP     AF
         RET
-PMSG:   DB      "RSX PARAMETER ERROR",12,0 
-PERROR: LD      HL,PMSG 
-PLOOP:  LD      A,(HL) 
-        OR      A ; check for zero byte
-        RET     Z 
-        CALL    0xBB5A 
-        INC     HL 
-        JR      PLOOP         
+PERROR: CALL    SPRINT
+PMSG:   DB      "RSX PARAMETER ERROR",12,0
+        RET
         ;; --------------------------------------------------------------
         ;; RSX: |FIFOGETS, @A$, n
 	;; --------------------------------------------------------------
@@ -199,7 +217,7 @@ PLOOP:  LD      A,(HL)
         ;;  hl,de,af,bc all preserved via stack
 FIFOGETS:
         CP      2       ; check parameter count and return if not 2
-        JR      nz,PERROR        
+        JR      nz,PERROR
         PUSH    AF
         PUSH    BC
         PUSH    DE
@@ -233,53 +251,53 @@ FGS1:
         ;; RSX: |FIFOINC, @c%, @n%
         ;; --------------------------------------------------------------
 	;; Non-Blocking write (OUTC) or read (INC) of integer c to/from FIFO.
-	;; 
+	;;
 	;; Entry:
 	;;  a    -  number of parameters
 	;;  ix+3 -> high byte of char to write/read (ignored)
 	;;  ix+2 -> low byte of char to write/read
 	;;  ix+1 -> high byte of address of n
 	;;  ix   -> low byte of address of n
-	;; 
+	;;
 	;; Exit
 	;;  BASIC var n holds 1 if successful or 0 if not
 	;;  BASIC var c% holds character read for FIFOINC if successful
         ;;  All registers preserved via the stack
-FIFOOUTC:            
+FIFOOUTC:
         CP      2 ; check parameter
         JR      nz,PERROR
         PUSH    AF
         PUSH    BC
         PUSH    DE
         PUSH    HL
-        LD      bc,FIFO_STATUS 
-        IN      a,(c) 
-        AND     FIFO_DIR 
-        JR      z,FIOC 
-        DEC     c 
-        LD      a,(ix+2) 
-        OUT     (c),a 
-        JR      FIOC1 
-FIFOINC:             
+        LD      bc,FIFO_STATUS
+        IN      a,(c)
+        AND     FIFO_DIR
+        JR      z,FIOC
+        DEC     c
+        LD      a,(ix+2)
+        OUT     (c),a
+        JR      FIOC1
+FIFOINC:
         CP      2 ; check parameter
-        JR      nz,PERROR 
+        JR      nz,PERROR
         PUSH    AF
         PUSH    BC
         PUSH    DE
         PUSH    HL
-        LD      bc,FIFO_STATUS 
-        IN      a,(c) 
-        AND     FIFO_DOR 
-        JR      z,FIOC 
-        DEC     c 
-        LD      h,(ix+3) 
-        LD      l,(ix+2) 
+        LD      bc,FIFO_STATUS
+        IN      a,(c)
+        AND     FIFO_DOR
+        JR      z,FIOC
+        DEC     c
+        LD      h,(ix+3)
+        LD      l,(ix+2)
         INI      ; (HL) <- IN (BC) ; HL++, B--
 FIOC1:  LD      a,1 ; wrote one char
-FIOC:   LD      h,(ix+1) 
-        LD      l,(ix) 
+FIOC:   LD      h,(ix+1)
+        LD      l,(ix)
         LD      (hl),a ; writes 0 if unsuccessful or 1 otherwise
-        JP      RESTOREANDRETURN        
+        JP      RESTOREANDRETURN
 
 	;; --------------------------------------------------------------
 	;; RSX: |FIFORST
@@ -296,3 +314,46 @@ FIFORST:
         ld   a,0xfd
         out  (0x81),a        	; write to status register resets FIFO
         ret
+#ifdef ROM
+FIFOROMINIT:
+	;; --------------------------------------------------------------
+	;; RSX: |FIFOROMINIT
+	;; --------------------------------------------------------------
+	;;
+	;; initialise the FIFO ROM and print the banner on startup
+	;;
+	;; Entry
+	;; - None
+	;;
+	;; Exit
+	;; - AF Corrupt
+        push de
+        push hl ;save de/hl
+        call SPRINT
+        DB 13,10, "CPC-Cplink V", VER+'0', '.',SVER+'0', '.',SSVER+'0',13,10,10,0
+        pop hl ;restore hl/de (optionally subtract any workspace area from hl before returning)
+        pop de
+        ret
+#endif
+	;; --------------------------------------------------------------
+	;; SPRINT - string print
+	;; --------------------------------------------------------------
+	;;
+        ;; CALL sprint
+        ;; DB "string", 0
+	;;
+	;; Entry
+	;; - None
+	;;
+	;; Exit
+	;; - HL,AF Corrupt
+SPRINT:
+        pop hl                  ;get string address
+SPLOOP:
+        ld a,(hl)               ; get next char
+        jp z,SPEND              ; end of loop ?
+        call TXT_OUTPUT
+        inc hl
+        jr SPLOOP
+SPEND:  inc hl                  ; point to next addr after end of string
+        jp (hl)                 ; and jump to it to return

@@ -1,5 +1,10 @@
+
+ROMflag ?=
+
 fiforsx.bin: fiforsx.s
-	rasm fiforsx.s -o fiforsx
+	cpp ${ROMflag} -E fiforsx.s | grep -v '^#'> tmp.s
+	rasm tmp.s -o fiforsx -s
+
 
 all: fiforsx.bin
 
