@@ -35,15 +35,6 @@
         ;;  MEMORY &9C39: LOAD "FIFORSX.BIN", &9C40: CALL &9C40
         ;; OR
         ;;   Assemble to ROM (setenv ROMflag -DROM before running make)
-#ifdef ROM
-        ORG             0xC000
-        DB              0x1     ; 1=background ROM
-        DB              VER     ; Version.subversion.subsubversion
-        DB              SVER
-        DB              SSVER
-#else
-        ORG             0x9C40
-#endif
         FIFO_STATUS     EQU     0xFD81
         FIFO_DATA       EQU     0xFD80
         FIFO_DIR        EQU     0x2
@@ -54,6 +45,15 @@
         SVER            EQU     0x0
         SSVER           EQU     0x0
 
+#ifdef ROM
+        ORG             0xC000
+        DB              0x1     ; 1=background ROM
+        DB              VER     ; Version.subversion.subsubversion
+        DB              SVER
+        DB              SSVER
+#else
+        ORG             0x9C40
+#endif
 #ifndef ROM
         ;; ------------------------------------------------------------------
         ;; install RSX
@@ -330,9 +330,10 @@ FIFOROMINIT:
         push de
         push hl ;save de/hl
         call SPRINT
-        DB 13,10, "CPC-Cplink V", VER+'0', '.',SVER+'0', '.',SSVER+'0',13,10,10,0
+        DB 13,10, " CPC-Cplink V", VER+'0', '.',SVER+'0', '.',SSVER+'0',13,10,10,0
         pop hl ;restore hl/de (optionally subtract any workspace area from hl before returning)
         pop de
+        scf
         ret
 #endif
 	;; --------------------------------------------------------------
@@ -351,6 +352,7 @@ SPRINT:
         pop hl                  ;get string address
 SPLOOP:
         ld a,(hl)               ; get next char
+        or a
         jp z,SPEND              ; end of loop ?
         call TXT_OUTPUT
         inc hl
