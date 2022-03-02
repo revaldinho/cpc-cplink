@@ -330,7 +330,7 @@ FIFOROMINIT:
         push de
         push hl ;save de/hl
         call SPRINT
-        DB 13,10, " CPC-Cplink V", VER+'0', '.',SVER+'0', '.',SSVER+'0',13,10,10,0
+        DB 13,10, " CPC-Cplink RSX ROM V", VER+'0', '.',SVER+'0', '.',SSVER+'0',13,10,10,0
         pop hl ;restore hl/de (optionally subtract any workspace area from hl before returning)
         pop de
         scf
