@@ -415,6 +415,7 @@ FIFOHELP:
         PUSH DE
         PUSH HL
         CALL SPRINT
+        DB 4,2                  ; Change to Mode 2 for Help output
         DB 13,10,"CPC-CPLINK V",VER+'0',".",SVER+'0',".",SSVER+'0'," ",164," Revaldinho 2022",13,10
         DB 13,10,"|FIFOGETC,@a%    - get byte from FIFO into int a% (blocking)"
         DB 13,10,"|FIFOGETS,@a$,n% - get n% bytes from FIFO into string a$ (blocking)"
