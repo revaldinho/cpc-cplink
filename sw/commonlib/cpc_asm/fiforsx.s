@@ -68,8 +68,12 @@ JUMP_TABLE:
 #ifdef ROM
         JP      FIFOROMINIT
 #endif
+        JP      FIFODIR
+        JP      FIFODOR
+        JP      FIFOFLUSH
         JP      FIFOGETC
         JP      FIFOGETS
+        JP      FIFOHELP
         JP      FIFOINC
         JP      FIFOOUTC
         JP      FIFOPUTC
@@ -78,16 +82,74 @@ JUMP_TABLE:
 NAME_TABLE:
         ;; NB the last letter of each RSX name must have bit 7 set to 1.
 #ifdef ROM
-        DB      "FIFO ROM INI","T"+0x80 ; illegal name for init command so that it cant be called again
+        DB      "CPC-CPLIN","K"+0x80 ; illegal name for init command so that it cant be called again
 #endif
+        DB      "FIFODI","R"+0x80
+        DB      "FIFODO","R"+0x80
+        DB      "FIFOFLUS","H"+0x80
         DB      "FIFOGET","C"+0x80
         DB      "FIFOGET","S"+0x80
+        DB      "FIFOHEL","P"+0x80
         DB      "FIFOIN","C"+0x80
         DB      "FIFOOUT","C"+0x80
         DB      "FIFOPUT","C"+0x80
         DB      "FIFOPUT","S"+0x80
         DB      "FIFORS","T"+0x80
         DB      0 ;end of name table marker
+
+	; --------------------------------------------------------------
+	; RSX: |FIFODOR, @f%
+	; --------------------------------------------------------------
+	; Return state of FIFO Data Output Ready flag in BASIC var f%
+	;
+	; Entry
+	;   a      - num params
+	;   (ix+1) - high byte of BASIC parameter c address
+	;   (ix)   - low byte of BASIC parameter c address
+	; Exit
+	;   BASIC var f% holds value of DOR flag
+	;   bc,af,hl all preserved via stack
+FIFODOR:
+	CP      1 ; check parameter count and return if not 1
+	JP      nz,PERROR
+	PUSH    AF
+	PUSH    BC
+        PUSH    HL
+	LD      BC,FIFO_STATUS
+	IN      A,(C)
+	JR      FIFODOIR
+	; --------------------------------------------------------------
+	; RSX: |FIFODIR, @f%
+	; --------------------------------------------------------------
+	; Return state of FIFO Data Input Ready flag in BASIC var f%
+	;
+	; Entry
+	;   a      - num params
+	;   (ix+1) - high byte of BASIC parameter c address
+	;   (ix)   - low byte of BASIC parameter c address
+	; Exit
+	;   BASIC var f% holds value of DIR flag
+	;   bc,af,hl all preserved via stack
+FIFODIR:
+	CP      1 ; check parameter count and return if not 1
+	JP      nz,PERROR
+	PUSH    AF
+	PUSH    BC
+        PUSH    HL
+	LD      BC,FIFO_STATUS
+	IN      A,(C)
+	RRA
+FIFODOIR:
+	AND     0x1
+        LD      L,(IX)
+        LD      H,(IX+1)
+        LD      (HL),A
+        INC     HL
+        LD      (HL),0
+        POP     HL
+	POP     BC
+	POP     AF
+	RET
 	;; --------------------------------------------------------------
         ;; RSX: |FIFOPUTC, c
 	;; --------------------------------------------------------------
@@ -160,7 +222,7 @@ FPC2:
         ;; Exit
         ;;  hl,de,af,bc all preserved via stack
 FIFOPUTS:
-        CP      2       ; check parameter count and return if not 1
+        CP      1       ; check parameter count and return if not 1
         JR      nz,PERROR
         PUSH    AF
         PUSH    BC
@@ -195,7 +257,7 @@ RESTOREANDRETURN:
         POP     AF
         RET
 PERROR: CALL    SPRINT
-PMSG:   DB      "RSX PARAMETER ERROR",12,0
+PMSG:   DB      "RSX PARAMETER ERROR",13,10,0
         RET
         ;; --------------------------------------------------------------
         ;; RSX: |FIFOGETS, @A$, n
@@ -309,11 +371,63 @@ FIOC:   LD      h,(ix+1)
 	;; - None
 	;;
 	;; Exit
-	;; - AF Corrupt
+	;; - all registers preserved
 FIFORST:
+        PUSH AF
         ld   a,0xfd
         out  (0x81),a        	; write to status register resets FIFO
+        POP  AF
         ret
+	;; --------------------------------------------------------------
+	;; RSX: |FIFOFLUSH
+	;; --------------------------------------------------------------
+	;; Reset the FIFO and flush any new input until no data remains
+	;;
+	;; Entry
+        ;; - none
+        ;; Exit
+	;;  - bc,af,de, hl all preserved via stack
+FIFOFLUSH:
+        PUSH AF
+        PUSH BC
+FLOOP:
+        CALL    FIFORST ; reset the FIFO (clear all current input/output)
+        LD      BC,FIFO_STATUS
+        IN      A,(C)
+        AND     0x1 ; any input data ?
+        JR      NZ, FLOOP ; new data so reset FIFO again
+FLEXIT:
+        POP BC
+        POP AF
+        RET
+	;; --------------------------------------------------------------
+	;; RSX: |FIFOHELP
+	;; --------------------------------------------------------------
+	;; Print HELP message
+	;;
+	;; Entry
+        ;; - none
+        ;; Exit
+	;;  - bc,af,de, hl all preserved via stack
+FIFOHELP:
+        PUSH AF
+        PUSH BC
+        PUSH DE
+        PUSH HL
+        CALL SPRINT
+        DB 13,10,"CPC-CPLINK V",VER+'0',".",SVER+'0',".",SSVER+'0'," ",164," Revaldinho 2022",13,10
+        DB 13,10,"|FIFOGETC,@a%    - get byte from FIFO into int a% (blocking)"
+        DB 13,10,"|FIFOGETS,@a$,n% - get n% bytes from FIFO into string a$ (blocking)"
+        DB 13,10,"|FIFOPUTC,a%     - write int a% to FIFO (blocking)"
+        DB 13,10,"|FIFOPUTS,@a$    - write string a$ to FIFO (blocking)"
+        DB 13,10,"|FIFOOUTC,a%,@f% - write int a% to FIFO, f%=1 if successful (non-blocking)"
+        DB 13,10,"|FIFOINC,@a%,@f% - get int a% from FIFO, f%=1 if successful (non-blocking)"
+        DB 13,10,"|FIFORST         - reset FIFO"
+        DB 13,10,"|FIFOFLUSH       - reset FIFO and flush any new input data"
+        DB 13,10,"|FIFOHELP        - show this help message"
+        DB 13,10,0
+        JP RESTOREANDRETURN
+
 #ifdef ROM
 FIFOROMINIT:
 	;; --------------------------------------------------------------
@@ -336,6 +450,7 @@ FIFOROMINIT:
         scf
         ret
 #endif
+
 	;; --------------------------------------------------------------
 	;; SPRINT - string print
 	;; --------------------------------------------------------------
