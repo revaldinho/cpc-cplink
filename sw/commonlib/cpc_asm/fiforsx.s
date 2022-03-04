@@ -67,13 +67,15 @@ JUMP_TABLE:
         DW      name_table      ;address pointing to RSX commands
 #ifdef ROM
         JP      FIFOROMINIT
-#endif
         JP      FIFODIR
         JP      FIFODOR
         JP      FIFOFLUSH
+#endif
         JP      FIFOGETC
         JP      FIFOGETS
+#ifdef ROM
         JP      FIFOHELP
+#endif
         JP      FIFOINC
         JP      FIFOOUTC
         JP      FIFOPUTC
@@ -83,13 +85,15 @@ NAME_TABLE:
         ;; NB the last letter of each RSX name must have bit 7 set to 1.
 #ifdef ROM
         DB      "CPC-CPLIN","K"+0x80 ; illegal name for init command so that it cant be called again
-#endif
         DB      "FIFODI","R"+0x80
         DB      "FIFODO","R"+0x80
         DB      "FIFOFLUS","H"+0x80
+#endif
         DB      "FIFOGET","C"+0x80
         DB      "FIFOGET","S"+0x80
+#ifdef ROM
         DB      "FIFOHEL","P"+0x80
+#endif
         DB      "FIFOIN","C"+0x80
         DB      "FIFOOUT","C"+0x80
         DB      "FIFOPUT","C"+0x80
@@ -97,6 +101,7 @@ NAME_TABLE:
         DB      "FIFORS","T"+0x80
         DB      0 ;end of name table marker
 
+#ifdef ROM
 	; --------------------------------------------------------------
 	; RSX: |FIFODOR, @f%
 	; --------------------------------------------------------------
@@ -150,6 +155,7 @@ FIFODOIR:
 	POP     BC
 	POP     AF
 	RET
+#endif
 	;; --------------------------------------------------------------
         ;; RSX: |FIFOPUTC, c
 	;; --------------------------------------------------------------
@@ -378,6 +384,7 @@ FIFORST:
         out  (0x81),a        	; write to status register resets FIFO
         POP  AF
         ret
+#ifdef ROM
 	;; --------------------------------------------------------------
 	;; RSX: |FIFOFLUSH
 	;; --------------------------------------------------------------
@@ -416,7 +423,9 @@ FIFOHELP:
         PUSH HL
         CALL SPRINT
         DB 4,2                  ; Change to Mode 2 for Help output
-        DB 13,10,"CPC-CPLINK V",VER+'0',".",SVER+'0',".",SSVER+'0'," ",164," Revaldinho 2022",13,10
+        DB 13,10,"CPC-CPLINK V",VER+'0',".",SVER+'0',SSVER+'0'," ",164," Revaldinho 2022",13,10
+        DB 13,10,"|FIFODIR,@f%     - get FIFO data input ready flag in lsb of f%"
+        DB 13,10,"|FIFODOR,@f%     - get FIFO data output ready flag in lsb of f%"
         DB 13,10,"|FIFOGETC,@a%    - get byte from FIFO into int a% (blocking)"
         DB 13,10,"|FIFOGETS,@a$,n% - get n% bytes from FIFO into string a$ (blocking)"
         DB 13,10,"|FIFOPUTC,a%     - write int a% to FIFO (blocking)"
@@ -428,8 +437,6 @@ FIFOHELP:
         DB 13,10,"|FIFOHELP        - show this help message"
         DB 13,10,0
         JP RESTOREANDRETURN
-
-#ifdef ROM
 FIFOROMINIT:
 	;; --------------------------------------------------------------
 	;; RSX: |FIFOROMINIT
@@ -445,7 +452,7 @@ FIFOROMINIT:
         push de
         push hl ;save de/hl
         call SPRINT
-        DB 13,10, " CPC-Cplink RSX ROM V", VER+'0', '.',SVER+'0', '.',SSVER+'0',13,10,10,0
+        DB 13,10, " CPC-CPLINK RSX ROM V", VER+'0', '.',SVER+'0',SSVER+'0',13,10,10,0
         pop hl ;restore hl/de (optionally subtract any workspace area from hl before returning)
         pop de
         scf
@@ -469,7 +476,7 @@ SPRINT:
 SPLOOP:
         ld a,(hl)               ; get next char
         or a
-        jp z,SPEND              ; end of loop ?
+        jr z,SPEND              ; end of loop ?
         call TXT_OUTPUT
         inc hl
         jr SPLOOP
