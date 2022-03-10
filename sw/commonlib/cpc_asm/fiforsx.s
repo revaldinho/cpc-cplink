@@ -47,12 +47,14 @@
 
 ifdef ROM
         ORG             0xC000
+FIFORSXSTART:
         DB              0x1     ; 1=background ROM
         DB              VER     ; Version.subversion.subsubversion
         DB              SVER
         DB              SSVER
 else
-        ORG             0x9C40
+        ORG             0x9A00
+FIFORSXSTART:
         ;; ------------------------------------------------------------------
         ;; install RSX
         LD      hl,work_space   ;address of a 4 byte workspace useable by Kernel
@@ -71,8 +73,8 @@ ifdef ROM
         JP      FIFOHELP
         JP      ORIGIN
         JP      PLOT
-        JP      VDU
 endif
+        JP      VDU
         JP      FIFOGETC
         JP      FIFOGETS
         JP      FIFOINC
@@ -90,8 +92,8 @@ ifdef ROM
         DB      "FIFOHEL","P"+0x80
         DB      "ORIGI","N"+0x80
         DB      "PLO","T"+0x80
-        DB      "VD","U"+0x80
 endif
+        DB      "VD","U"+0x80
         DB      "FIFOGET","C"+0x80
         DB      "FIFOGET","S"+0x80
         DB      "FIFOIN","C"+0x80
@@ -351,6 +353,131 @@ FGB_LOOP:
         DEC  C
         IN   L,(C)
         RET
+	;; --------------------------------------------------------------
+	;; RSX: |VDU, N%, P1%, P2%, ..., Pn%
+	;; RSX: |VDU25, K%, X%, Y%
+	;; RSX: |VDU29, X%, Y%
+	;; --------------------------------------------------------------
+	;;
+	;; Send a BBC Micro VDU command byte and parameters to the FIFO for
+        ;; interpretation by an external BBC VDU processor. 16b values need
+        ;; to have their byte order reversed
+	;;
+	;; Entry (Generic RSX handling)
+        ;;     a     - number of parameters
+        ;;     (ix)   - points to parameter table
+        ;;     (ix+5) -> high byte of K%
+        ;;     (ix+4) -> low byte of K%
+        ;;     (ix+3) -> high byte of X%
+        ;;     (ix+2) -> low byte of X%
+        ;;     (ix+1) -> high byte of Y%
+        ;;     (ix)   -> low byte of Y%
+	;; - None
+	;;
+	;; Exit
+	;; - All registers preserved
+
+        ;; Expected Parameters per VDU command _not_ including the VDU number itself
+VDUPARMS:
+        DB      0,1,0,0,0,0,0,0
+        DB      0,0,0,0,0,0,0,0
+        DB      0,1,2,5,0,0,1,9
+        DB      8,5,0,0,4,4,0,2
+
+VDU:
+        ;;  Bail out if no parameters at all, ie missing VDU command num!
+        CP      0
+        JP      Z, PERROR
+
+        ;; Find VDU number, 1st RSX parameter at loc IX + (N-1)*2
+        LD      E, A            ; save num RSX params in E
+        PUSH    IX              ; Move IX into HL
+        POP     HL
+        DEC     A               ; A=N-1
+        SLA     A               ; A=(N-1)*2
+        LD      B,0             ; BC=(N-1)*2 for 16bit addition
+        LD      C,A
+        ADD     HL,BC           ; Pointer to 1st RSX param, N%, is HL+2*(N-1)
+        LD      A, (HL)         ; Get N% (VDU number)
+
+        ;; Special handling for VDU 25,29 (16 bit args) and VDU 127
+        CP      25
+        JR      NZ,VDU_L1       ; Not VDU25, move on
+        LD      A,E             ; restore num params
+        DEC     A               ; -1 to remove VDU number itself
+        JP      VDU25           ; call VDU25
+VDU_L1:
+        CP      29
+        JR      NZ,VDU_L2       ; Not VDU29, move on
+        LD      A,E             ; restore num params
+        DEC     A               ; -1 to remove VDU number itself
+        JP      VDU29           ; call VDU29
+VDU_L2:
+        CP      127             ;
+        JR      NZ,VDU_L3       ; Not VDU127, move on
+        LD      L, A            ; write out code 127 and return
+        CALL    _FIFO_PUT_BYTE
+        RET
+VDU_L3:
+        CP      32
+        JR      C,VDU_L4       ; reject all codes > 31
+        CALL    SPRINT
+        DB      "ERROR - Only VDU commands 0-31 and 127 are valid",13,10,0
+        RET
+VDU_L4:
+        PUSH    HL              ; save pointer to 1st parameter
+        ;;  Check VDU call parameters
+        LD      B,0
+        LD      C,A             ; C holds VDU num and is also offset to VDU param check table
+        LD      HL,VDUPARMS
+        ADD     HL,BC
+        LD      A,(HL)          ; get required params for VDU command
+        INC     A               ; add 1 to it to include the VDU number
+        CP      E               ; compare with actual number of RSX params
+        JP      Z, VDU_L5       ; continue if match
+        POP     HL              ; else discard top of stack (pointer to 1st param)
+        JP      PERROR          ; exit with error message
+VDU_L5:
+        POP     HL              ; restore HL as pointer to first param, E still holds num params >=1
+        LD  	BC, FIFO_STATUS
+VDU_L6:
+        IN  	A,(C)
+        AND  	FIFO_DIR
+        JR  	Z,VDU_L6
+        DEC 	C               ; Point to DATA reg
+        LD  	A,(HL)          ; Get Param
+        OUT 	(C),A           ; Write it
+        DEC 	HL              ; Next Param
+        DEC 	HL
+        DEC 	E               ; dec counter
+        JR  	NZ,VDU_L6       ; more params ?
+        RET
+
+PLOT:
+VDU25:                          ; |PLOT (VDU25),K%,X%,Y%
+        CP      3
+        JP      NZ,PERROR
+        LD      L,25            ; Command 25
+        CALL    _FIFO_PUT_BYTE
+        LD      L,(IX+4)        ; Low byte of K% (VDU25)
+        JR      VDU_2INT_PARAMS
+ORIGIN:
+VDU29:                          ; |ORIGIN (VDU29), X%, Y%
+        CP      2
+        JP      NZ,PERROR
+        LD      L,29            ; Command 29
+VDU_2INT_PARAMS:
+        CALL    _FIFO_PUT_BYTE
+        LD      L,(IX+2)        ; Low byte of X%
+        CALL    _FIFO_PUT_BYTE
+        LD      L,(IX+3)        ; High byte of X%
+        CALL    _FIFO_PUT_BYTE
+        LD      L,(IX)          ; Low byte of Y%
+        CALL    _FIFO_PUT_BYTE
+        LD      L,(IX+1)        ; High byte of Y%
+        CALL    _FIFO_PUT_BYTE
+        RET
+
 
 ifdef ROM
 	; --------------------------------------------------------------
@@ -464,131 +591,6 @@ FIFOROMINIT:
         POP DE
         SCF
         RET
-	;; --------------------------------------------------------------
-	;; RSX: |VDU, N%, P1%, P2%, ..., Pn%
-	;; RSX: |VDU25, K%, X%, Y%
-	;; RSX: |VDU28, X%, Y%
-	;; RSX: |VDU29, X%, Y%
-	;; --------------------------------------------------------------
-	;;
-	;; Send a BBC Micro VDU command byte and parameters to the FIFO for
-        ;; interpretation by an external BBC VDU processor. 16b values need
-        ;; to have their byte order reversed
-	;;
-	;; Entry (Generic RSX handling)
-        ;;     a     - number of parameters
-        ;;     (ix)   - points to parameter table
-        ;;     (ix+5) -> high byte of K%
-        ;;     (ix+4) -> low byte of K%
-        ;;     (ix+3) -> high byte of X%
-        ;;     (ix+2) -> low byte of X%
-        ;;     (ix+1) -> high byte of Y%
-        ;;     (ix)   -> low byte of Y%
-	;; - None
-	;;
-	;; Exit
-	;; - All registers preserved
-
-        ;; Expected Parameters per VDU command _not_ including the VDU number itself
-VDUPARMS:
-        DB      0,1,0,0,0,0,0,0
-        DB      0,0,0,0,0,0,0,0
-        DB      0,1,2,5,0,0,1,9
-        DB      8,5,0,0,4,4,0,2
-
-VDU:
-        ;;  Bail out if no parameters at all, ie missing VDU command num!
-        CP      0
-        JP      Z, PERROR
-
-        ;; Find VDU number, 1st RSX parameter at loc IX + (N-1)*2
-        LD      E, A            ; save num RSX params in E
-        PUSH    IX              ; Move IX into HL
-        POP     HL
-        SUB     1               ; A=N-1
-        SLA     A               ; A=(N-1)*2
-        LD      B,0             ; BC=(N-1)*2 for 16bit addition
-        LD      C,A
-        ADD     HL,BC           ; Pointer to 1st RSX param, N%, is HL+2*(N-1)
-        LD      A, (HL)         ; Get N% (VDU number)
-
-        ;; Special handling for VDU 25,29 (16 bit args) and VDU 127
-        CP      25
-        JR      NZ,VDU_L1       ; Not VDU25, move on
-        LD      A,E             ; restore num params
-        SUB     1               ; -1 to remove VDU number itself
-        JP      VDU25           ; call VDU25
-VDU_L1:
-        CP      29
-        JR      NZ,VDU_L2       ; Not VDU29, move on
-        LD      A,E             ; restore num params
-        SUB     1               ; -1 to remove VDU number itself
-        JP      VDU29           ; call VDU29
-VDU_L2:
-        CP      127             ;
-        JR      NZ,VDU_L3       ; Not VDU127, move on
-        LD      L, A            ; write out code 127 and return
-        CALL    _FIFO_PUT_BYTE
-        RET
-VDU_L3:
-        CP      32
-        JR      C,VDU_L4       ; reject all codes > 31
-        CALL    SPRINT
-        DB      "ERROR - Only VDU commands 0-31 and 127 are valid",13,10,0
-        RET
-VDU_L4:
-        PUSH    HL              ; save pointer to 1st parameter
-        ;;  Check VDU call parameters
-        LD      B,0
-        LD      C,A             ; C holds VDU num and is also offset to VDU param check table
-        LD      HL,VDUPARMS
-        ADD     HL,BC
-        LD      A,(HL)          ; get required params for VDU command
-        INC     A               ; add 1 to it to include the VDU number
-        CP      E               ; compare with actual number of RSX params
-        JP      Z, VDU_L5       ; continue if match
-        POP     HL              ; else discard top of stack (pointer to 1st param)
-        JP      PERROR          ; exit with error message
-VDU_L5:
-        POP     HL              ; restore HL as pointer to first param, E still holds num params >=1
-        LD  	BC, FIFO_STATUS
-VDU_L6:
-        IN  	A,(C)
-        AND  	FIFO_DIR
-        JR  	Z,VDU_L6
-        DEC 	C               ; Point to DATA reg
-        LD  	A,(HL)          ; Get Param
-        OUT 	(C),A           ; Write it
-        DEC 	HL              ; Next Param
-        DEC 	HL
-        DEC 	E               ; dec counter
-        JR  	NZ,VDU_L6       ; more params ?
-        RET
-
-PLOT:
-VDU25:                          ; |PLOT (VDU25),K%,X%,Y%
-        CP      3
-        JP      NZ,PERROR
-        LD      L,25            ; Command 25
-        CALL    _FIFO_PUT_BYTE
-        LD      L,(IX+4)        ; Low byte of K%
-        CALL    _FIFO_PUT_BYTE
-        JR      VDU_2INT_PARAMS
-ORIGIN:
-VDU29:                          ; |ORIGIN (VDU29), X%, Y%
-        CP      2
-        JP      NZ,PERROR
-        LD      L,29            ; Command 25
-        CALL    _FIFO_PUT_BYTE
-        JR      VDU_2INT_PARAMS
-VDU_2INT_PARAMS:
-        LD      L,(IX+2)        ; Low byte of X%
-        CALL    _FIFO_PUT_BYTE
-        LD      L,(IX+3)        ; High byte of X%
-        CALL    _FIFO_PUT_BYTE
-        LD      L,(IX)          ; Low byte of Y%
-        CALL    _FIFO_PUT_BYTE
-        LD      L,(IX+1)        ; High byte of Y%
-        CALL    _FIFO_PUT_BYTE
-        RET
 endif
+
+FIFORSXEND:

@@ -49,7 +49,7 @@ _fifo_reset::
 	;; Exit
 	;; - L = state of DOR
 	;; - AF corrupt, all other registers preserved
-        ;; 
+        ;;
 _fifo_get_dor::
         ld   a,#0xfd
         in   a,(#0x81)         	; get status
@@ -70,7 +70,7 @@ _fifo_get_dor::
 	;; Exit
 	;; - L = state of DIR
 	;; - AF corrupt, all other registers preserved
-        ;; 
+        ;;
 _fifo_get_dir::
         ld   a,#0xfd
         in   a,(#0x81)         	; get status
@@ -78,8 +78,8 @@ _fifo_get_dir::
         rra                     ; quick shift to LSB
         ld   l,a                ; transfer to l as return value
         ret
-        
-        
+
+
 	;; --------------------------------------------------------------
 	;; fifo_in_byte    (__z88dk_fastcall)
 	;; --------------------------------------------------------------
@@ -121,14 +121,14 @@ fib_end:
 	;; - AF, BC corrupt
 _fifo_get_byte::
         ld   bc, #0xfd81
-fgb_loop:       
+fgb_loop:
         in   a,(c)         	; get status
         and  #0x1              	; test DOR flag
         jr   z,fgb_loop 	; Get status again if not ready
         dec  c                  ; point to status register
         in   l,(c)         	; get byte
         ret
-        
+
 	;; --------------------------------------------------------------
 	;; fifo_out_byte    (__z88dk_fastcall)
 	;; --------------------------------------------------------------
@@ -167,14 +167,14 @@ fob_end:
 	;; - AF, BC corrupt
 _fifo_put_byte::
         ld   bc, #0xfd81
-fpb_loop:       
+fpb_loop:
         in   a,(c)         	; get dir status flag
         and  #0x2
         jr   z,fpb_loop         ; loop again if not yet ready
         dec c			; point to data reg
         out (c), l              ; write the byte
         ret
-        
+
 	;; --------------------------------------------------------
 	;; fifo_ext_param
 	;; --------------------------------------------------------
