@@ -447,6 +447,7 @@ VDU_L6:
         DEC 	C               ; Point to DATA reg
         LD  	A,(HL)          ; Get Param
         OUT 	(C),A           ; Write it
+        INC     C               ; Point back to STATUS reg
         DEC 	HL              ; Next Param
         DEC 	HL
         DEC 	E               ; dec counter
