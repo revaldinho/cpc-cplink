@@ -1,8 +1,6 @@
 INSTALL @lib$ + "gpiolib"
 INSTALL @lib$ + "stringlib"
 
-REM GPIO Allocation (Data bits match PiTubeDirect)
-
 QUEUE_SZ%=1024
 DIM queue%(QUEUE_SZ%)
 DIM PIN_DATA%(8)
@@ -13,6 +11,8 @@ PIN_SI%  = 18
 PIN_SOB% = 22
 PIN_DOR% = 23
 PIN_WNR% = 24
+
+REM GPIO Allocation (Data bits match PiTubeDirect)
 PIN_DATA%()   = 2,3,4,7,8,9,10,11 : REM index 0..7
 PMASK_DIR%    = 1 << PIN_DIR%    : ALL_PINS%=ALL_PINS% + PMASK_DIR%
 PMASK_SI%     = 1 << PIN_SI%     : ALL_PINS%=ALL_PINS% + PMASK_SI%
@@ -47,17 +47,17 @@ UNTIL 0
 END
     
 DEF PROC_setup_fifo_pins()
-	REM Need to setup all pins as inputs first before setting any as outputs
+    REM Need to setup all pins as inputs first before setting any as outputs
     LOCAL p%
-	FOR p%=0 TO 24
-	    PROC_gpio_inp(gpio%,p%)
-	NEXT p%
-	REM now setup selected pins to output mode and drive low initially
-	PROC_gpio_out(gpio%,PIN_SI%)
-	PROC_gpio_out(gpio%,PIN_SOB%)
-	PROC_gpio_out(gpio%,PIN_WNR%)
+    FOR p%=0 TO 24
+        PROC_gpio_inp(gpio%,p%)
+    NEXT p%
+    REM now setup selected pins to output mode and drive low initially
+    PROC_gpio_out(gpio%,PIN_SI%)
+    PROC_gpio_out(gpio%,PIN_SOB%)
+    PROC_gpio_out(gpio%,PIN_WNR%)
     REM Default state is all outputs driving low, databus tristated 
-	PROC_gpio_clr(gpio%,ALL_PINS%)
+    PROC_gpio_clr(gpio%,ALL_PINS%)
 ENDPROC
 
 DEF PROC_write_fifo_byte( txdata% )
