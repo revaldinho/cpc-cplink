@@ -71,9 +71,9 @@ ifdef ROM
         JP      FIFODOR
         JP      FIFOFLUSH
         JP      FIFOHELP
+endif
         JP      ORIGIN
         JP      PLOT
-endif
         JP      VDU
         JP      FIFOGETC
         JP      FIFOGETS
@@ -90,9 +90,9 @@ ifdef ROM
         DB      "FIFODO","R"+0x80
         DB      "FIFOFLUS","H"+0x80
         DB      "FIFOHEL","P"+0x80
+endif
         DB      "ORIGI","N"+0x80
         DB      "PLO","T"+0x80
-endif
         DB      "VD","U"+0x80
         DB      "FIFOGET","C"+0x80
         DB      "FIFOGET","S"+0x80
@@ -439,15 +439,14 @@ VDU_L4:
         JP      PERROR          ; exit with error message
 VDU_L5:
         POP     HL              ; restore HL as pointer to first param, E still holds num params >=1
-        LD  	BC, FIFO_STATUS
 VDU_L6:
+        LD  	BC, FIFO_STATUS
         IN  	A,(C)
         AND  	FIFO_DIR
         JR  	Z,VDU_L6
         DEC 	C               ; Point to DATA reg
         LD  	A,(HL)          ; Get Param
         OUT 	(C),A           ; Write it
-        INC     C               ; Point back to STATUS reg
         DEC 	HL              ; Next Param
         DEC 	HL
         DEC 	E               ; dec counter
