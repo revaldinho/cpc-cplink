@@ -53,7 +53,7 @@ FIFORSXSTART:
         DB              SVER
         DB              SSVER
 else
-        ORG             0x9A00
+        ORG             0x9800
 FIFORSXSTART:
         ;; ------------------------------------------------------------------
         ;; install RSX
