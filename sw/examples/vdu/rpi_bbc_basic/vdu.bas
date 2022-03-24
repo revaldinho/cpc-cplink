@@ -35,7 +35,7 @@
 
       REM Simple byte-at-a-time VDU processing
       REPEAT
-        IF FN_gpio_get(gpio%, PIN_DOR%) THEN PRINT CHR$(FN_read_fifo_byte)
+        IF FN_gpio_get(gpio%, PIN_DOR%) THEN PRINT CHR$(FN_read_fifo_byte);
       UNTIL 0
       END
 
@@ -75,7 +75,6 @@
 
       PROC_gpio_set(gpio%,data%+PMASK_WNR%)
       PROC_gpio_set(gpio%,data%+PMASK_WNR%+PMASK_SI%)
-      WAIT 0
       PROC_gpio_clr(gpio%,PMASK_SI%)
 
       REM tristate data bus again
@@ -97,14 +96,13 @@
       REM
       LOCAL rslt%, mask%, b%
 
-      PROC_gpio_set(gpio%, PMASK_SOB%)
       rslt%=0
       mask%=1
+      PROC_gpio_set(gpio%, PMASK_SOB%)
       FOR b%=0 TO 7
         bit%=FN_gpio_get(gpio%, PIN_DATA%(b%))
         IF bit%<>0 THEN rslt%=rslt%+mask%
         mask%=mask%<<1
       NEXT b%
-      WAIT 0
       PROC_gpio_clr(gpio%, PMASK_SOB%)
       =rslt%
