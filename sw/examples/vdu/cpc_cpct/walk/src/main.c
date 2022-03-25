@@ -8,13 +8,14 @@
 #define DRAW(x,y) plot(5,x,y)
 #define VDU18(a,b) fifo_put_byte(18) ; fifo_put_byte(a) ; fifo_put_byte(b)
 #define NUMLINES 8
-#define ITERATIONS 25
+#define ITERATIONS 50
 #define MX 3200
 #define MY 2400
 
 void vduinit();
 void vdustring( char *s );
 void plot(uint8_t type, int16_t x, int16_t y) ;
+void delay(uint32_t d);
 
 void main (int argc, char *argv[] ) {
   int16_t X=MX>>1;
@@ -100,4 +101,9 @@ void plot(uint8_t type, int16_t x, int16_t y) {
   fifo_put_byte((uint8_t) (x >> 8));
   fifo_put_byte((uint8_t) (y & 0xFF));
   fifo_put_byte((uint8_t) (y >> 8));
+}
+
+void delay(uint32_t d) {
+  uint32_t x = kl_time_please() + d;
+  while ( kl_time_please() < x ) {}
 }
