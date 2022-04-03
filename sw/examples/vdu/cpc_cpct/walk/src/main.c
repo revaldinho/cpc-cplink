@@ -15,7 +15,7 @@
 void vduinit();
 void vdustring( char *s );
 void plot(uint8_t type, int16_t x, int16_t y) ;
-void delay(uint32_t d);
+void delay_300th(uint32_t d);
 
 void main (int argc, char *argv[] ) {
   int16_t X=MX>>1;
@@ -64,6 +64,7 @@ void main (int argc, char *argv[] ) {
       if (A>MX || A<0) C=-C;
       if (B>MY || B<0) D=-D;
     }
+    delay_300th(30);
   }
 
   t = kl_time_please();
@@ -103,7 +104,7 @@ void plot(uint8_t type, int16_t x, int16_t y) {
   fifo_put_byte((uint8_t) (y >> 8));
 }
 
-void delay(uint32_t d) {
+void delay_300th(uint32_t d) {
   uint32_t x = kl_time_please() + d;
   while ( kl_time_please() < x ) {}
 }

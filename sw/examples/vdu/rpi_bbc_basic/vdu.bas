@@ -30,15 +30,12 @@
 
       rptr%=0
       wptr%=0
-      ctr%=0
       gpio%= FN_gpio_setup
       PROC_setup_fifo_pins
 
       REM Simple byte-at-a-time VDU processing
       REPEAT
         IF FN_gpio_get(gpio%, PIN_DOR%) THEN PRINT CHR$(FN_read_fifo_byte);
-        ctr%=ctr%+1
-        IF ctr% AND 7 THEN WAIT 0
       UNTIL 0
       END
 
