@@ -1,19 +1,19 @@
 // main.c - an loopback demo for the CPC-CPLink board
 // Copyright (C) 2019  Revaldinho
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-// 
+//
 
 #include <stdio.h>
 #include <stdint.h>
@@ -34,10 +34,10 @@ void check_data(uint8_t *v1, uint8_t *v2, uint16_t n);
 void main ( void ) {
   uint16_t i,j;
   uint32_t t ;
-  uint8_t *tx_p = (uint8_t *)MEMPOOL ; 
+  uint8_t *tx_p = (uint8_t *)MEMPOOL ;
   uint8_t *rx_p = (uint8_t *)MEMPOOL+SZ;
   uint8_t count ;
-  
+
   scr_set_mode(2);
 
   fifo_reset();
@@ -66,18 +66,18 @@ void main ( void ) {
   check_data( tx_p, rx_p, SZ);
 
   puts("\nTest 2: Send/Receive 1 byte at a time, check FIFO status per byte\r");
-  puts("         (Use blocking read/write routines)\r");  
-  
+  puts("         (Use blocking read/write routines)\r");
+
   kl_time_set(0);
-  for ( i=0 ; i < SZ; i++ ) {    
+  for ( i=0 ; i < SZ; i++ ) {
     fifo_put_byte(*(tx_p+i));
     *(rx_p+i) = fifo_get_byte();
   }
-  
-  t = kl_time_please(); 
+
+  t = kl_time_please();
   show_stats(i,j,t);
   check_data( tx_p, rx_p, SZ);
-  
+
   puts("\nTest 3: Send/Receive multiple bytes, check FIFO status per byte\r");
   kl_time_set(0);
   for ( i=0, j=0; (i+j) < DBL_SZ; ) {
@@ -140,5 +140,3 @@ void check_data(uint8_t *v1, uint8_t *v2, uint16_t n) {
     printf("%d errors detected\r\n",e);
   }
 }
-
-
