@@ -63,3 +63,5 @@ For more detailed information refer to the [project wiki pages](https://github.c
 ## License
 
 All programs and data files in this project are made available under the terms of the [GNU General Public License v3.](https://github.com/revaldinho/cpc_ram_expansion/blob/master/LICENSE)
+
+Libraries in the sw/ area for CPCTelera (C) and Z80 assembler (fifolib.s and fiforsx.s) are made available under the terms of the [GNU Lesser General Public License v3](https://www.gnu.org/licenses/lgpl-3.0.en.html) as indicated in the source code.
